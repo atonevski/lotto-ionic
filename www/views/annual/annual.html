@@ -1,0 +1,23 @@
+<ion-view view-title='Годишна уплата'>
+  <ion-content>
+    <div class='list'>
+      <div class='item item-divider'>
+        <div class='row row-no-padding'>
+          <div class='col col-20'>година</div>
+          <div class='col col-20 text-center'>изв.</div>
+          <div class='col col-30 text-right'>лото</div>
+          <div class='col col-30 text-right'>џокер</div>
+        </div>
+      </div>
+      <div class='item item-annual' ng-repeat='s in sales'>
+        <div class='row row-no-padding'>
+          <div class='col col-20'><a href='#/weekly/{{ s.year }}'>
+            <i class='icon ion-android-arrow-dropright'></i></a>{{ s.year }}</div>
+          <div class='col col-20 text-center'>{{ s.draws }}</div>
+          <div class='col col-30 text-right'>{{ thou_sep(s.lotto) }}</div>
+          <div class='col col-30 text-right'>{{ thou_sep(s.joker) }}</div>
+        </div>
+      </div>
+    </div>
+  </ion-content>
+</ion-view>

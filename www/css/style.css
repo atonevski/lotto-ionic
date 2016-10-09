@@ -1,0 +1,22 @@
+/* Empty. Add your own CSS if you like */
+.item-annual, .item-weekly { 
+  padding-top: 2px;  
+  padding-bottom: 2px; 
+  margin: 0;
+
+  font-size: 14px;
+
+  border-top: none;
+  border-bottom: dotted;
+  border-width: 1px;
+}
+.divider-weekly {
+  font-size: 12px;
+  font-weight: bold;
+
+  border-bottom: solid;
+  border-width: 1px;
+}
+
+.saturday, .thursday{ background-color: #F0F3F8; }
+.wednesday, .monday { background-color: #FAFAFA; }

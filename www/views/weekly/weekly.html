@@ -1,0 +1,25 @@
+<ion-view>
+  <ion-nav-title>Уплата {{ year }}</ion-nav-title>
+  <ion-content>
+    <div class='list'>
+      <div class='item item-divider divider-weekly'>
+        <div class='row row-no-padding'>
+          <div class='col col-20'>коло</div>
+          <div class='col col-20 text-center'>ден</div>
+          <div class='col col-30 text-right'>лото</div>
+          <div class='col col-30 text-right'>џокер</div>
+        </div>
+      </div>
+      <div class='item item-weekly' 
+           ng-class="{ monday: s.dow == 2, wednesday: s.dow == 4, thursday: s.dow == 5, saturday: s.dow == 7,  }"
+           ng-repeat='s in sales'>
+        <div class='row row-no-padding'>
+          <div class='col col-20'>{{ s.draw }}</div>
+          <div class='col col-20 text-center'>{{ dow_to_mk(s.dow) }}</div>
+          <div class='col col-30 text-right'>{{ thou_sep(s.lotto) }}</div>
+          <div class='col col-30 text-right'>{{ thou_sep(s.joker) }}</div>
+        </div>
+      </div>
+    </div>
+  </ion-content>
+</ion-view>
