@@ -63,7 +63,10 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
   $scope.qurl = function(q) {
     return ($scope.URL + "tq?tqx=out:json&key=" + $scope.KEY) + ("&tq=" + (encodeURI(q)));
   };
-  return query = 'SELECT YEAR(B), COUNT(A), SUM(C), SUM(I) GROUP BY YEAR(B) ORDER BY YEAR(B)';
+  query = 'SELECT YEAR(B), COUNT(A), SUM(C), SUM(I) GROUP BY YEAR(B) ORDER BY YEAR(B)';
+  $scope.width = window.innerWidth;
+  $scope.height = window.innerHeight;
+  return console.log("WxH: " + window.innerWidth + "x" + window.innerHeight);
 }).controller('Annual', function($scope, $http) {
   var query;
   query = 'SELECT YEAR(B), COUNT(A), SUM(C), SUM(I) GROUP BY YEAR(B) ORDER BY YEAR(B)';
@@ -139,4 +142,12 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
       };
     });
   });
+}).directive('barChart', function() {
+  return {
+    restrict: 'A',
+    replace: false,
+    link: function(scope, el, attrs) {
+      return d3.select(el[0]).append('h3').html('Title');
+    }
+  };
 });

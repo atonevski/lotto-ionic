@@ -66,17 +66,11 @@ angular.module 'app', ['ionic']
   $scope.qurl = (q) -> "#{ $scope.URL }tq?tqx=out:json&key=#{ $scope.KEY }" +
                 "&tq=#{ encodeURI q }"
   query = 'SELECT YEAR(B), COUNT(A), SUM(C), SUM(I) GROUP BY YEAR(B) ORDER BY YEAR(B)'
-  # query spreadsheet
-  # $http.get $scope.qurl(query)
-  #   .success (data, status) ->
-  #     re = /^([^(]+?\()(.*)\);$/g
-  #     match = re.exec data
-  #     res = JSON.parse match[2]
-  #     
-  #     for row in res.table.rows
-  #       console.log $scope.eval_row(row)
-  #   .error (data, status) ->
-  #     console.log "Error loading lotto data (#{ status })"
+  
+  # device width/height
+  $scope.width  = window.innerWidth
+  $scope.height = window.innerHeight
+  console.log "WxH: #{ window.innerWidth }x#{ window.innerHeight }"
 
 .controller 'Annual', ($scope, $http) ->
   query = 'SELECT YEAR(B), COUNT(A), SUM(C), SUM(I) GROUP BY YEAR(B) ORDER BY YEAR(B)'
@@ -128,3 +122,15 @@ angular.module 'app', ['ionic']
           lotto:  a[2]
           joker:  a[3]
         }
+  $scope.toggle = () ->
+    $('#qq').append('<p>append</p>')
+
+.directive 'barChart', () ->
+  {
+    restrict: 'A'
+    replace:  false
+    link:     (scope, el, attrs) ->
+      d3.select el[0]
+        .append 'h3'
+        .html 'Title' # should be scope.barChart.title
+  }
