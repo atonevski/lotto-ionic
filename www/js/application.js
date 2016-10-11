@@ -66,14 +66,19 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
   query = 'SELECT YEAR(B), COUNT(A), SUM(C), SUM(I) GROUP BY YEAR(B) ORDER BY YEAR(B)';
   $scope.width = window.innerWidth;
   $scope.height = window.innerHeight;
-  return console.log("WxH: " + window.innerWidth + "x" + window.innerHeight);
+  return console.log("WxH: " + window.innerWidth + "x" + window.ainnerHeight);
 }).controller('Annual', function($scope, $http) {
   var query;
+  $scope.hide_chart = true;
+  $scope.bar_chart = {};
+  $scope.bar_chart.title = 'Bar chart title';
+  $scope.bar_chart.width = $scope.width;
+  $scope.bar_chart.height = $scope.height;
   query = 'SELECT YEAR(B), COUNT(A), SUM(C), SUM(I) GROUP BY YEAR(B) ORDER BY YEAR(B)';
   return $http.get($scope.qurl(query)).success(function(data, status) {
     var res;
     res = $scope.to_json(data);
-    return $scope.sales = res.table.rows.map(function(r) {
+    $scope.sales = res.table.rows.map(function(r) {
       var a;
       a = $scope.eval_row(r);
       return {
@@ -82,6 +87,12 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
         lotto: a[2],
         joker: a[3]
       };
+    });
+    $scope.bar_chart.data = $scope.sales.map(function(r) {
+      return r.lotto;
+    });
+    return $scope.bar_chart.labels = $scope.sales.map(function(r) {
+      return r.year;
     });
   });
 }).controller('Weekly', function($scope, $http, $stateParams) {
@@ -128,7 +139,7 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
   };
   $scope.year = parseInt($stateParams.year);
   query = "SELECT A, dayOfWeek(B), C, I WHERE YEAR(B) = " + $scope.year + " ORDER BY A";
-  return $http.get($scope.qurl(query)).success(function(data, status) {
+  $http.get($scope.qurl(query)).success(function(data, status) {
     var res;
     res = $scope.to_json(data);
     return $scope.sales = res.table.rows.map(function(r) {
@@ -142,12 +153,60 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
       };
     });
   });
+  return $scope.toggle = function() {
+    return $('#qq').append('<p>append</p>');
+  };
 }).directive('barChart', function() {
   return {
     restrict: 'A',
     replace: false,
     link: function(scope, el, attrs) {
-      return d3.select(el[0]).append('h3').html('Title');
+      var margin, r, svg, x, x_axis, y, y_axis;
+      if (attrs.title != null) {
+        scope.bar_chart.title = attrs.title;
+      }
+      if (attrs.width != null) {
+        scope.bar_chart.width = parseInt(attrs.width);
+      }
+      if (attrs.height != null) {
+        scope.bar_chart.height = parseInt(attrs.height);
+      }
+      margin = {
+        top: 15,
+        right: 10,
+        bottom: 40,
+        left: 60
+      };
+      console.log("Title x-" + scope.bar_chart.labels[Math.floor(scope.bar_chart.labels.length / 2)]);
+      console.log("wxh: " + scope.bar_chart.width + "x" + scope.bar_chart.height);
+      svg = d3.select(el[0]).append('svg').attr('width', scope.bar_chart.width + margin.left + margin.right).attr('height', scope.bar_chart.height + margin.top + margin.bottom).append('g').attr('transform', "translate(" + margin.left + ", " + margin.top + ")");
+      y = d3.scale.linear().rangeRound([scope.bar_chart.height, 0]);
+      y_axis = d3.svg.axis().scale(y).tickFormat(function(d) {
+        return Math.round(d / 10000) / 100 + " M";
+      }).orient('left');
+      x = d3.scale.ordinal().rangeRoundBands([0, scope.bar_chart.width], 0.1);
+      x_axis = d3.svg.axis().scale(x).orient('bottom');
+      y.domain([0, d3.max(scope.bar_chart.data)]);
+      svg.append('g').attr('class', 'y axis').transition().duration(1000).call(y_axis);
+      x.domain(scope.bar_chart.labels);
+      svg.append('g').attr('class', 'x axis').attr('transform', "translate(0, " + scope.bar_chart.height + ")").call(x_axis);
+      svg.append('text').attr('x', x(scope.bar_chart.labels[Math.floor(scope.bar_chart.labels.length / 2)])).attr('y', y(20 + d3.max(scope.bar_chart.data))).attr('dy', '-0.35em').attr('text-anchor', 'middle').text(scope.bar_chart.title);
+      r = svg.selectAll('.bar').data(scope.bar_chart.data.map(function(d) {
+        return Math.floor(Math.random() * d);
+      })).enter().append('rect').attr('class', 'bar').attr('x', function(d, i) {
+        return x(scope.bar_chart.labels[i]);
+      }).attr('y', function(d) {
+        return y(d);
+      }).attr('height', function(d) {
+        return scope.bar_chart.height - y(d);
+      }).attr('width', x.rangeBand()).attr('data-toggle', 'tooltip').attr('md-direction', 'top').attr('title', function(d, i) {
+        return scope.thou_sep(scope.bar_chart.data[i]);
+      });
+      return r.transition().duration(1000).ease('elastic').attr('y', function(d, i) {
+        return y(scope.bar_chart.data[i]);
+      }).attr('height', function(d, i) {
+        return scope.bar_chart.height - y(scope.bar_chart.data[i]);
+      });
     }
   };
 });

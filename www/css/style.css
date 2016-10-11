@@ -20,3 +20,19 @@
 
 .saturday, .thursday{ background-color: #F0F3F8; }
 .wednesday, .monday { background-color: #FAFAFA; }
+
+rect { fill: steelblue; }
+
+.axis text {
+  /* font: 12px Droid Sans; */
+  /* font-family: 'Droid Sans'; */
+  font-family: 'Open Sans Condensed';
+  font-size: 10px;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}

@@ -1,11 +1,12 @@
 <ion-view view-title='Годишна уплата'>
   <ion-content>
-    <div class='row' ng-click="toggle()">
+    <div class='row' ng-click="hide_chart = !hide_chart">
       <div id='qq' class='col text-right'>
         <a><i class='icon ion-stats-bars'></i></a>
       </div>
     </div>
-    <div id='bar-chart-id' class='row' bar-chart hidden>
+    <div id='bar-chart-id' class='row' bar-chart ng-if='!hide_chart'i
+         width='280' height='200' title='Годишни уплати'>
     </div>
     <div class='list'>
       <div class='item item-divider'>
