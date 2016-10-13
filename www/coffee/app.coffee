@@ -70,16 +70,16 @@ angular.module 'app', ['ionic']
   # device width/height
   $scope.width  = window.innerWidth
   $scope.height = window.innerHeight
-  console.log "WxH: #{ window.innerWidth }x#{ window.ainnerHeight }"
+  console.log "WxH: #{ window.innerWidth }x#{ window.innerHeight }"
 
-.controller 'Annual', ($scope, $http) ->
+.controller 'Annual', ($scope, $http, $ionicPopup, $timeout) ->
   # bar chart
   $scope.hide_chart = true
-  $scope.bar_chart = { }
-  $scope.bar_chart.title  = 'Bar chart title'
-  $scope.bar_chart.width  = $scope.width
-  $scope.bar_chart.height = $scope.height
-
+  $scope.sbarChart = { }
+  $scope.sbarChart.title  = 'Bar chart title'
+  $scope.sbarChart.width  = $scope.width
+  $scope.sbarChart.height = $scope.height
+  
   query = 'SELECT YEAR(B), COUNT(A), SUM(C), SUM(I) GROUP BY YEAR(B) ORDER BY YEAR(B)'
   $http.get $scope.qurl(query)
     .success (data, status) ->
@@ -92,8 +92,9 @@ angular.module 'app', ['ionic']
           lotto:  a[2]
           joker:  a[3]
         }
-      $scope.bar_chart.data   = $scope.sales.map (r) -> r.lotto
-      $scope.bar_chart.labels = $scope.sales.map (r) -> r.year
+      $scope.sbarChart.data   = $scope.sales
+      $scope.sbarChart.labels = 'year'
+      $scope.sbarChart.categories = ['joker', 'lotto']
           
 .controller 'Weekly', ($scope, $http, $stateParams) ->
   $scope.dow_to_mk = (d) ->
@@ -131,80 +132,146 @@ angular.module 'app', ['ionic']
           lotto:  a[2]
           joker:  a[3]
         }
-  $scope.toggle = () ->
-    $('#qq').append('<p>append</p>')
 
 .directive 'barChart', () ->
   {
     restrict: 'A'
     replace:  false
     link:     (scope, el, attrs) ->
-      scope.bar_chart.title   = attrs.title   if attrs.title?
-      scope.bar_chart.width   = parseInt(attrs.width)   if attrs.width?
-      scope.bar_chart.height  = parseInt(attrs.height)  if attrs.height?
+      scope.barChart.title   = attrs.title   if attrs.title?
+      scope.barChart.width   = parseInt(attrs.width)   if attrs.width?
+      scope.barChart.height  = parseInt(attrs.height)  if attrs.height?
       margin = { top: 15, right: 10, bottom: 40, left: 60 }
       
-      console.log "Title x-#{ scope.bar_chart.labels[Math.floor scope.bar_chart.labels.length/2] }"
-      console.log "wxh: #{scope.bar_chart.width}x#{scope.bar_chart.height}"
+      console.log "Title x-#{ scope.barChart.labels[Math.floor scope.barChart.labels.length/2] }"
+      console.log "wxh: #{scope.barChart.width}x#{scope.barChart.height}"
       svg = d3.select el[0]
               .append 'svg'
-              .attr 'width', scope.bar_chart.width + margin.left + margin.right
-              .attr 'height', scope.bar_chart.height + margin.top + margin.bottom
+              .attr 'width', scope.barChart.width + margin.left + margin.right
+              .attr 'height', scope.barChart.height + margin.top + margin.bottom
               .append 'g'
               .attr 'transform', "translate(#{margin.left}, #{margin.top})"
-      y = d3.scale.linear().rangeRound [scope.bar_chart.height, 0]
-      y_axis = d3.svg.axis().scale(y)
+      y = d3.scale.linear().rangeRound [scope.barChart.height, 0]
+      yAxis = d3.svg.axis().scale(y)
                  .tickFormat (d) -> Math.round(d/10000)/100 + " M"
                  .orient 'left'
 
-      x = d3.scale.ordinal().rangeRoundBands [0, scope.bar_chart.width], 0.1
-      x_axis = d3.svg.axis().scale(x).orient 'bottom'
+      x = d3.scale.ordinal().rangeRoundBands [0, scope.barChart.width], 0.1
+      xAxis = d3.svg.axis().scale(x).orient 'bottom'
 
-      y.domain [0, d3.max(scope.bar_chart.data)]
+      y.domain [0, d3.max(scope.barChart.data)]
       svg.append 'g'
          .attr 'class', 'y axis'
          .transition().duration 1000
-         .call y_axis
-      x.domain scope.bar_chart.labels
+         .call yAxis
+      x.domain scope.barChart.labels
       svg.append 'g'
          .attr 'class', 'x axis'
-         .attr 'transform', "translate(0, #{scope.bar_chart.height})"
-         .call x_axis
+         .attr 'transform', "translate(0, #{scope.barChart.height})"
+         .call xAxis
      
       svg.append 'text'
-         .attr 'x', x(scope.bar_chart.labels[Math.floor scope.bar_chart.labels.length/2])
-         .attr 'y', y(20 + d3.max(scope.bar_chart.data))
+         .attr 'x', x(scope.barChart.labels[Math.floor scope.barChart.labels.length/2])
+         .attr 'y', y(20 + d3.max(scope.barChart.data))
          .attr 'dy', '-0.35em'
          .attr 'text-anchor', 'middle'
-         .text scope.bar_chart.title
+         .attr 'class', 'bar-chart-title'
+         .text scope.barChart.title
+
       r = svg.selectAll '.bar'
-         .data scope.bar_chart.data.map (d) -> Math.floor Math.random()*d
+         .data scope.barChart.data.map (d) -> Math.floor Math.random()*d
          .enter().append 'rect'
          .attr 'class', 'bar'
-         .attr 'x', (d, i) -> x(scope.bar_chart.labels[i])
+         .attr 'x', (d, i) -> x(scope.barChart.labels[i])
          .attr 'y', (d) -> y(d)
-         .attr 'height', (d) -> scope.bar_chart.height - y(d)
+         .attr 'height', (d) -> scope.barChart.height - y(d)
          .attr 'width', x.rangeBand()
-         .attr 'data-toggle', 'tooltip'
-         .attr 'md-direction', 'top'
-         .attr 'title', (d, i) -> scope.thou_sep(scope.bar_chart.data[i])
+         .attr 'ng-touch', (d, i) -> "console.log(#{i})" #"{{ showPopup(#{scope.barChart.data[i]}) }}"
+         .attr 'title', (d, i) -> scope.thou_sep(scope.barChart.data[i])
 
       r.transition().duration 1000
          .ease 'elastic'
-         .attr 'y', (d, i) -> y(scope.bar_chart.data[i])
-         .attr 'height', (d, i) -> scope.bar_chart.height - y(scope.bar_chart.data[i])
+         .attr 'y', (d, i) -> y(scope.barChart.data[i])
+         .attr 'height', (d, i) -> scope.barChart.height - y(scope.barChart.data[i])
+  }
 
-      # svg.selectAll '.bar'
-      #    .data scope.bar_chart.data
-      #    .enter()
-      #    .append 'rect'
-      #    .attr 'class', 'bar'
-      #    .attr 'x', (d, i) -> x(scope.bar_chart.labels[i])
-      #    .attr 'y', (d) -> y(d)
-      #    .attr 'height', (d) -> scope.bar_chart.height - y(d)
-      #    .attr 'width', x.rangeBand()
-      #    .attr 'data-toggle', 'tooltip'
-      #    .attr 'md-direction', 'top'
-      #    .attr 'title', (d, i) -> scope.thou_sep(scope.bar_chart.data[i])
+.directive 'stackedBarChart', () ->
+  {
+    restrict: 'A'
+    replace:  false
+    link:     (scope, el, attrs) ->
+      scope.sbarChart.title   = attrs.title             if attrs.title?
+      scope.sbarChart.width   = parseInt(attrs.width)   if attrs.width?
+      scope.sbarChart.height  = parseInt(attrs.height)  if attrs.height?
+      margin = { top: 15, right: 10, bottom: 40, left: 60 }
 
+      svg = d3.select el[0]
+              .append 'svg'
+              .attr 'width', scope.sbarChart.width + margin.left + margin.right
+              .attr 'height', scope.sbarChart.height + margin.top + margin.bottom
+              .append 'g'
+              .attr 'transform', "translate(#{margin.left}, #{margin.top})"
+      
+      # scope.sbarChart.categories
+      # ['lotto', 'joker']
+      lab = scope.sbarChart.labels
+      remapped = scope.sbarChart.categories.map (cat) ->
+        scope.sbarChart.data.map (d, i) ->
+          { x: d[lab], y: d[cat] }
+      
+      stacked = d3.layout.stack()(remapped)
+
+      y = d3.scale.linear().rangeRound [scope.sbarChart.height, 0]
+      yAxis = d3.svg.axis().scale(y)
+                 .tickFormat (d) -> Math.round(d/10000)/100 + " M"
+                 .orient 'left'
+
+      x = d3.scale.ordinal().rangeRoundBands [0, scope.sbarChart.width], 0.1
+      xAxis = d3.svg.axis().scale(x).orient 'bottom'
+
+      x.domain stacked[0].map (d) -> d.x
+      svg.append 'g'
+         .attr 'class', 'x axis'
+         .attr 'transform', "translate(0, #{scope.sbarChart.height})"
+         .call xAxis
+
+      y.domain [0, d3.max(stacked[-1..][0], (d) -> return d.y0 + d.y)]
+      svg.append 'g'
+         .attr 'class', 'y axis'
+         .transition().duration 1000
+         .call yAxis
+
+      console.log "MAX: #{ d3.max(stacked[-1..][0], ((d) -> d.y0 + d.y)) }"
+      console.log stacked[-1..]
+
+      color = d3.scale.ordinal().range ['brown', 'stealblue']
+      
+      svg.selectAll '.bar'
+         .data stacked
+         .append 'rect'
+         .attr 'class', 'bar'
+         .attr 'x', (d) -> x(d.x)
+         .attr 'y', (d) -> -y(d.y0) - y(d.y)
+         .attr 'height', (d) -> y(d.y)
+         .attr 'width', x.rangeBand()
+         .style 'fill', (d, i) -> color(i)
+         .attr 'title', (d, i) -> scope.thou_sep(scope.barChart.data[i])
+
+      console.log "width: #{ x.rangeBand() }"
+#             // Add a group for each column.
+#             var valgroup = svg.selectAll("g.valgroup")
+#             .data(stacked)
+#             .enter().append("svg:g")
+#             .attr("class", "valgroup")
+#             .style("fill", function(d, i) { return z(i); })
+#             .style("stroke", function(d, i) { return d3.rgb(z(i)).darker(); });
+#  
+#             // Add a rect for each date.
+#             var rect = valgroup.selectAll("rect")
+#             .data(function(d){return d;})
+#             .enter().append("svg:rect")
+#             .attr("x", function(d) { return x(d.x); })
+#             .attr("y", function(d) { return -y(d.y0) - y(d.y); })
+#             .attr("height", function(d) { return y(d.y); })
+#             .attr("width", x.rangeBand());
   }

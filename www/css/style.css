@@ -36,3 +36,9 @@ rect { fill: steelblue; }
   stroke: #000;
   shape-rendering: crispEdges;
 }
+
+.bar-chart-title {
+  font-family: 'Droid Sans';
+  font-size: 14px;
+  font-weight: bold;
+}
