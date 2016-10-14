@@ -151,6 +151,7 @@ angular.module 'app', ['ionic']
               .attr 'height', scope.barChart.height + margin.top + margin.bottom
               .append 'g'
               .attr 'transform', "translate(#{margin.left}, #{margin.top})"
+
       y = d3.scale.linear().rangeRound [scope.barChart.height, 0]
       yAxis = d3.svg.axis().scale(y)
                  .tickFormat (d) -> Math.round(d/10000)/100 + " M"
@@ -164,6 +165,7 @@ angular.module 'app', ['ionic']
          .attr 'class', 'y axis'
          .transition().duration 1000
          .call yAxis
+
       x.domain scope.barChart.labels
       svg.append 'g'
          .attr 'class', 'x axis'
@@ -203,7 +205,7 @@ angular.module 'app', ['ionic']
       scope.sbarChart.title   = attrs.title             if attrs.title?
       scope.sbarChart.width   = parseInt(attrs.width)   if attrs.width?
       scope.sbarChart.height  = parseInt(attrs.height)  if attrs.height?
-      margin = { top: 15, right: 10, bottom: 40, left: 60 }
+      margin = { top: 15, right: 100, bottom: 40, left: 60 }
 
       svg = d3.select el[0]
               .append 'svg'
@@ -213,13 +215,12 @@ angular.module 'app', ['ionic']
               .attr 'transform', "translate(#{margin.left}, #{margin.top})"
       
       # scope.sbarChart.categories
-      # ['lotto', 'joker']
       lab = scope.sbarChart.labels
       remapped = scope.sbarChart.categories.map (cat) ->
         scope.sbarChart.data.map (d, i) ->
-          { x: d[lab], y: d[cat] }
-      
-      stacked = d3.layout.stack()(remapped)
+          { x: d[lab], y: d[cat], cat: cat }
+
+      stacked  = d3.layout.stack()(remapped)
 
       y = d3.scale.linear().rangeRound [scope.sbarChart.height, 0]
       yAxis = d3.svg.axis().scale(y)
@@ -236,15 +237,18 @@ angular.module 'app', ['ionic']
          .call xAxis
 
       y.domain [0, d3.max(stacked[-1..][0], (d) -> return d.y0 + d.y)]
-      svg.append 'g'
+      xa = svg.append 'g'
          .attr 'class', 'y axis'
          .transition().duration 1000
          .call yAxis
 
-      console.log "MAX: #{ d3.max(stacked[-1..][0], ((d) -> d.y0 + d.y)) }"
-      console.log stacked[-1..]
+      # svg.append 'g'
+      #    .attr 'class', 'grid'
+      #    .call xa.tickFormat ''
 
-      color = d3.scale.ordinal().range ['brown', 'steelblue']
+      # color = d3.scale.ordinal().range ['brown', 'steelblue']
+      color = d3.scale.category10()
+
       
       svg.append 'text'
          .attr 'x', x(stacked[0][Math.floor stacked[0].length/2].x)
@@ -259,35 +263,40 @@ angular.module 'app', ['ionic']
              .enter()
              .append 'g'
              .attr 'class', 'vgroup'
-             .style 'fill', (d, i) -> color(i)
+             .style 'fill', (d, i) -> d3.rgb(color(i)).brighter(1.2)
              .style 'stroke', (d, i) -> d3.rgb(color(i)).darker()
 
       g.selectAll 'rect'
          .data (d) -> d
          .enter()
          .append 'rect'
-         #.attr 'class', 'bar'
          .attr 'x', (d) -> x(d.x)
-         .attr 'y', (d) -> -y(d.y0) - y(d.y)
-         .attr 'height', (d) -> y(d.y)
+         .attr 'y', (d) -> y(d.y + d.y0)
+         .attr 'height', (d) -> y(d.y0) - y(d.y + d.y0)
          .attr 'width', x.rangeBand()
-         #.style 'fill', (d, i) -> color(i)
-         #.attr 'title', (d, i) -> scope.thou_sep(d.y)
+         .attr 'title', (d, i) -> "#{ d.cat }: #{ scope.thou_sep(d.y) }"
 
-#             // Add a group for each column.
-#             var valgroup = svg.selectAll("g.valgroup")
-#             .data(stacked)
-#             .enter().append("svg:g")
-#             .attr("class", "valgroup")
-#             .style("fill", function(d, i) { return z(i); })
-#             .style("stroke", function(d, i) { return d3.rgb(z(i)).darker(); });
-#  
-#             // Add a rect for each date.
-#             var rect = valgroup.selectAll("rect")
-#             .data(function(d){return d;})
-#             .enter().append("svg:rect")
-#             .attr("x", function(d) { return x(d.x); })
-#             .attr("y", function(d) { return -y(d.y0) - y(d.y); })
-#             .attr("height", function(d) { return y(d.y); })
-#             .attr("width", x.rangeBand());
+      legend = svg.append('g').attr 'class', 'legend'
+      legend.selectAll '.legend-rect'
+          .data scope.sbarChart.categories
+          .enter()
+          .append 'rect'
+          .attr 'class', '.legend-rect'
+          .attr('width', 16)
+          .attr 'height', 16
+          .attr 'x', scope.sbarChart.width + margin.right - 100
+          .attr 'y', (d, i) -> 20*i
+          .style 'stroke', (d, i) -> d3.rgb(color(i)).darker()
+          # .style 'opacity', '0.7'
+          .style 'fill', (d, i) -> d3.rgb(color(i)).brighter(1.2)
+
+      legend.selectAll 'text'
+          .data scope.sbarChart.categories
+          .enter()
+          .append 'text'
+          .attr 'class', 'legend'
+          .attr 'x', scope.sbarChart.width + margin.right - 100 + 20
+          .attr 'y', (d, i) -> 20*i + 8
+          .attr 'dy', 4
+          .text (d) -> d
   }

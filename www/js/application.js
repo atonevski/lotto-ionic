@@ -210,7 +210,7 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
     restrict: 'A',
     replace: false,
     link: function(scope, el, attrs) {
-      var color, g, lab, margin, remapped, stacked, svg, x, xAxis, y, yAxis;
+      var color, g, lab, legend, margin, remapped, stacked, svg, x, xAxis, xa, y, yAxis;
       if (attrs.title != null) {
         scope.sbarChart.title = attrs.title;
       }
@@ -222,7 +222,7 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
       }
       margin = {
         top: 15,
-        right: 10,
+        right: 100,
         bottom: 40,
         left: 60
       };
@@ -232,7 +232,8 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
         return scope.sbarChart.data.map(function(d, i) {
           return {
             x: d[lab],
-            y: d[cat]
+            y: d[cat],
+            cat: cat
           };
         });
       });
@@ -252,29 +253,40 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
           return d.y0 + d.y;
         })
       ]);
-      svg.append('g').attr('class', 'y axis').transition().duration(1000).call(yAxis);
-      console.log("MAX: " + (d3.max(stacked.slice(-1)[0], (function(d) {
-        return d.y0 + d.y;
-      }))));
-      console.log(stacked.slice(-1));
-      color = d3.scale.ordinal().range(['brown', 'steelblue']);
+      xa = svg.append('g').attr('class', 'y axis').transition().duration(1000).call(yAxis);
+      color = d3.scale.category10();
       svg.append('text').attr('x', x(stacked[0][Math.floor(stacked[0].length / 2)].x)).attr('y', y(20 + d3.max(stacked.slice(-1)[0], (function(d) {
         return d.y0 + d.y;
       })))).attr('dy', '-0.35em').attr('text-anchor', 'middle').attr('class', 'bar-chart-title').text(scope.sbarChart.title);
       g = svg.selectAll('g.vgroup').data(stacked).enter().append('g').attr('class', 'vgroup').style('fill', function(d, i) {
-        return color(i);
+        return d3.rgb(color(i)).brighter(1.2);
       }).style('stroke', function(d, i) {
         return d3.rgb(color(i)).darker();
       });
-      return g.selectAll('rect').data(function(d) {
+      g.selectAll('rect').data(function(d) {
         return d;
       }).enter().append('rect').attr('x', function(d) {
         return x(d.x);
       }).attr('y', function(d) {
-        return -y(d.y0) - y(d.y);
+        return y(d.y + d.y0);
       }).attr('height', function(d) {
-        return y(d.y);
-      }).attr('width', x.rangeBand());
+        return y(d.y0) - y(d.y + d.y0);
+      }).attr('width', x.rangeBand()).attr('title', function(d, i) {
+        return d.cat + ": " + (scope.thou_sep(d.y));
+      });
+      legend = svg.append('g').attr('class', 'legend');
+      legend.selectAll('.legend-rect').data(scope.sbarChart.categories).enter().append('rect').attr('class', '.legend-rect').attr('width', 16).attr('height', 16).attr('x', scope.sbarChart.width + margin.right - 100).attr('y', function(d, i) {
+        return 20 * i;
+      }).style('stroke', function(d, i) {
+        return d3.rgb(color(i)).darker();
+      }).style('fill', function(d, i) {
+        return d3.rgb(color(i)).brighter(1.2);
+      });
+      return legend.selectAll('text').data(scope.sbarChart.categories).enter().append('text').attr('class', 'legend').attr('x', scope.sbarChart.width + margin.right - 100 + 20).attr('y', function(d, i) {
+        return 20 * i + 8;
+      }).attr('dy', 4).text(function(d) {
+        return d;
+      });
     }
   };
 });

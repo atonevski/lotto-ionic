@@ -10,18 +10,18 @@
   border-bottom: dotted;
   border-width: 1px;
 }
+
 .divider-weekly {
   font-size: 12px;
   font-weight: bold;
 
-  border-bottom: solid;
+  border-top: none;
+  border-bottom: dotted;
   border-width: 1px;
 }
 
 .saturday, .thursday{ background-color: #F0F3F8; }
 .wednesday, .monday { background-color: #FAFAFA; }
-
-rect { fill: steelblue; }
 
 .axis text {
   /* font: 12px Droid Sans; */
@@ -37,6 +37,15 @@ rect { fill: steelblue; }
   shape-rendering: crispEdges;
 }
 
-.bar-chart-title {
-  font: 12px bold 'Droid Sans'
+.bar-chart-title, .legend {
+  font: 12px 'Open Sans';
+  font-weight: bold;
+}
+
+.grid .tick {
+    stroke: lightgrey;
+    opacity: 0.7;
+}
+.grid path {
+      stroke-width: 0;
 }
