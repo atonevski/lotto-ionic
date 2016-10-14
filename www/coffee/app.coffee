@@ -244,20 +244,36 @@ angular.module 'app', ['ionic']
       console.log "MAX: #{ d3.max(stacked[-1..][0], ((d) -> d.y0 + d.y)) }"
       console.log stacked[-1..]
 
-      color = d3.scale.ordinal().range ['brown', 'stealblue']
+      color = d3.scale.ordinal().range ['brown', 'steelblue']
       
-      svg.selectAll '.bar'
-         .data stacked
+      svg.append 'text'
+         .attr 'x', x(stacked[0][Math.floor stacked[0].length/2].x)
+         .attr 'y', y(20 + d3.max(stacked[-1..][0], ((d) -> d.y0 + d.y)))
+         .attr 'dy', '-0.35em'
+         .attr 'text-anchor', 'middle'
+         .attr 'class', 'bar-chart-title'
+         .text scope.sbarChart.title
+
+      g = svg.selectAll 'g.vgroup'
+             .data stacked
+             .enter()
+             .append 'g'
+             .attr 'class', 'vgroup'
+             .style 'fill', (d, i) -> color(i)
+             .style 'stroke', (d, i) -> d3.rgb(color(i)).darker()
+
+      g.selectAll 'rect'
+         .data (d) -> d
+         .enter()
          .append 'rect'
-         .attr 'class', 'bar'
+         #.attr 'class', 'bar'
          .attr 'x', (d) -> x(d.x)
          .attr 'y', (d) -> -y(d.y0) - y(d.y)
          .attr 'height', (d) -> y(d.y)
          .attr 'width', x.rangeBand()
-         .style 'fill', (d, i) -> color(i)
-         .attr 'title', (d, i) -> scope.thou_sep(scope.barChart.data[i])
+         #.style 'fill', (d, i) -> color(i)
+         #.attr 'title', (d, i) -> scope.thou_sep(d.y)
 
-      console.log "width: #{ x.rangeBand() }"
 #             // Add a group for each column.
 #             var valgroup = svg.selectAll("g.valgroup")
 #             .data(stacked)

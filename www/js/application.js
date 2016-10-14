@@ -210,7 +210,7 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
     restrict: 'A',
     replace: false,
     link: function(scope, el, attrs) {
-      var color, lab, margin, remapped, stacked, svg, x, xAxis, y, yAxis;
+      var color, g, lab, margin, remapped, stacked, svg, x, xAxis, y, yAxis;
       if (attrs.title != null) {
         scope.sbarChart.title = attrs.title;
       }
@@ -257,19 +257,24 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
         return d.y0 + d.y;
       }))));
       console.log(stacked.slice(-1));
-      color = d3.scale.ordinal().range(['brown', 'stealblue']);
-      svg.selectAll('.bar').data(stacked).append('rect').attr('class', 'bar').attr('x', function(d) {
+      color = d3.scale.ordinal().range(['brown', 'steelblue']);
+      svg.append('text').attr('x', x(stacked[0][Math.floor(stacked[0].length / 2)].x)).attr('y', y(20 + d3.max(stacked.slice(-1)[0], (function(d) {
+        return d.y0 + d.y;
+      })))).attr('dy', '-0.35em').attr('text-anchor', 'middle').attr('class', 'bar-chart-title').text(scope.sbarChart.title);
+      g = svg.selectAll('g.vgroup').data(stacked).enter().append('g').attr('class', 'vgroup').style('fill', function(d, i) {
+        return color(i);
+      }).style('stroke', function(d, i) {
+        return d3.rgb(color(i)).darker();
+      });
+      return g.selectAll('rect').data(function(d) {
+        return d;
+      }).enter().append('rect').attr('x', function(d) {
         return x(d.x);
       }).attr('y', function(d) {
         return -y(d.y0) - y(d.y);
       }).attr('height', function(d) {
         return y(d.y);
-      }).attr('width', x.rangeBand()).style('fill', function(d, i) {
-        return color(i);
-      }).attr('title', function(d, i) {
-        return scope.thou_sep(scope.barChart.data[i]);
-      });
-      return console.log("width: " + (x.rangeBand()));
+      }).attr('width', x.rangeBand());
     }
   };
 });
