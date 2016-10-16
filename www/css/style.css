@@ -24,8 +24,6 @@
 .wednesday, .monday { background-color: #FAFAFA; }
 
 .axis text {
-  /* font: 12px Droid Sans; */
-  /* font-family: 'Droid Sans'; */
   font-family: 'Open Sans Condensed';
   font-size: 10px;
 }
@@ -37,9 +35,29 @@
   shape-rendering: crispEdges;
 }
 
-.bar-chart-title, .legend {
-  font: 12px 'Open Sans';
+.bar-chart-title {
+  font-size: 12px;
+  font-family: 'Open Sans';
   font-weight: bold;
+}
+
+.legend {
+  font-size: 10px;
+  font-family: 'Open Sans';
+  font-weight: bold;
+}
+
+div.tooltip {
+  position: absolute;
+  text-align: left;
+  width: auto;
+  height: auto;
+  padding: 4px;
+  font: 10px 'Open Sans';
+  background: lightsteelblue;
+  border: 2px solid;
+  border-radius: 8px;
+  pointer-events: none;
 }
 
 .grid .tick {
