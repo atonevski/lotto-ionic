@@ -101,8 +101,14 @@ angular.module 'app', ['ionic']
       $scope.sbarChart.categories = ['лото', 'џокер']
           
 .controller 'Weekly', ($scope, $http, $stateParams) ->
+  # line chart
+  $scope.hideChart = true
+  $scope.lineChart = { }
+  $scope.lineChart.width  = $scope.width
+  $scope.lineChart.height = $scope.height
+
   $scope.dow_to_mk = (d) ->
-    switch d
+    switch Math.floor d
       when 1 then 'недела'
       when 2 then 'понеделник'
       when 3 then 'вторник'
@@ -113,7 +119,7 @@ angular.module 'app', ['ionic']
       else ''
 
   $scope.dow_to_en = (d) ->
-    switch d
+    switch Math.floor d
       when 1 then 'Sunday'
       when 2 then 'Monday'
       when 3 then 'Tuesday'
@@ -121,11 +127,14 @@ angular.module 'app', ['ionic']
       when 5 then 'Thursday'
       when 6 then 'Friday'
       when 7 then 'Saturday'
-      else ''
+      else "*#{ d }*"
 
   $scope.year = parseInt $stateParams.year
   # A: draw #, B: date, C: lotto sales, D: x7 (lotto), I: joker sales, J: x6 (joker)
-  queryYear = "SELECT A, dayOfWeek(B), C, I, B, D, J WHERE YEAR(B) = #{ $scope.year } ORDER BY A"
+  queryYear = """SELECT A, dayOfWeek(B), 
+                        C, I, B, D, J
+                 WHERE YEAR(B) = #{ $scope.year }
+                 ORDER BY A"""
   $http.get $scope.qurl(queryYear)
     .success (data, status) ->
       res = $scope.to_json data
@@ -140,6 +149,20 @@ angular.module 'app', ['ionic']
           lx7:    a[5]
           jx6:    a[6]
         }
+      $scope.buildSeries()
+
+  # build line chart series (only lotto sales)
+  $scope.buildSeries = () ->
+    arr = [[], [],  [], [], [], [], [], [] ]
+    for sale in $scope.sales
+      arr[sale.dow].push { x: sale.date, y: sale.lotto }
+    series = [ ]
+    for i, a of arr
+      if arr[i].length > 0
+        series.push { name: $scope.dow_to_en(i), data: arr[i] }
+    $scope.series = series
+        
+
 
   query = "SELECT YEAR(B), COUNT(A) GROUP BY YEAR(B) ORDER BY YEAR(B)"
   $http.get $scope.qurl(query)
@@ -153,7 +176,11 @@ angular.module 'app', ['ionic']
     console.log 'ENTER newSelection'
     $scope.select = v
     $scope.year   = $scope.select.year
-    queryYear = "SELECT A, dayOfWeek(B), C, I, B, D, J WHERE YEAR(B) = #{ $scope.year } ORDER BY A"
+    queryYear = """SELECT A, dayOfWeek(B),
+                          C, I, B, D, J
+                   WHERE YEAR(B) = #{ $scope.year }
+                   ORDER BY A"""
+    # update scope.sales and scope.series
     $http.get $scope.qurl(queryYear)
       .success (data, status) ->
         res = $scope.to_json data
@@ -168,7 +195,7 @@ angular.module 'app', ['ionic']
             lx7:    a[5]
             jx6:    a[6]
           }
-    console.log $scope.select
+        $scope.buildSeries()
 
 .directive 'barChart', () ->
   {
@@ -368,9 +395,9 @@ angular.module 'app', ['ionic']
     restrict: 'A'
     replace:  false
     link:     (scope, el, attrs) ->
-      scope.sbarChart.title   = attrs.title             if attrs.title?
-      scope.sbarChart.width   = parseInt(attrs.width)   if attrs.width?
-      scope.sbarChart.height  = parseInt(attrs.height)  if attrs.height?
+      scope.lineChart.title   = attrs.title             if attrs.title?
+      scope.lineChart.width   = parseInt(attrs.width)   if attrs.width?
+      scope.lineChart.height  = parseInt(attrs.height)  if attrs.height?
       margin = { top: 15, right: 120, bottom: 40, left: 40 }
 
       tooltip = d3.select el[0]
@@ -380,8 +407,31 @@ angular.module 'app', ['ionic']
 
       svg = d3.select el[0]
               .append 'svg'
-              .attr 'width', scope.sbarChart.width + margin.left + margin.right
-              .attr 'height', scope.sbarChart.height + margin.top + margin.bottom
+              .attr 'width',  scope.lineChart.width + margin.left + margin.right
+              .attr 'height', scope.lineChart.height + margin.top + margin.bottom
               .append 'g'
               .attr 'transform', "translate(#{margin.left}, #{margin.top})"
+      
+      y = d3.scale.linear().rangeRound [scope.lineChart.height, 0]
+      yAxis = d3.svg.axis()
+                .scale(y)
+                .orient 'left'
+      y.domain [0, d3.max scope.series.map (s) -> d3.max(s.data.map (d) -> d.y) ]
+      svg.append 'g'
+         .attr 'class', 'y axis'
+         .transition().duration 1000
+         .call yAxis
+
+      x = d3.time.scale().range [0, scope.lineChart.width]
+      xAxis = d3.svg.axis().scale(x)
+                .tickFormat(d3.time.format("%W"))
+                .orient 'bottom'
+
+      xmax = d3.max scope.series.map (s) -> d3.max(s.data.map (d) -> d.x)
+      xmin = d3.min scope.series.map (s) -> d3.min(s.data.map (d) -> d.x)
+      x.domain [d3.time.format("%W").parse(xmin), d3.time.format("%W").parse(xmax)]
+      svg.append 'g'
+         .attr 'class', 'x axis'
+         .attr 'transform', "translate(0, #{scope.lineChart.height})"
+         .call xAxis
   }

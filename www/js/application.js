@@ -99,8 +99,12 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
   });
 }).controller('Weekly', function($scope, $http, $stateParams) {
   var query, queryYear;
+  $scope.hideChart = true;
+  $scope.lineChart = {};
+  $scope.lineChart.width = $scope.width;
+  $scope.lineChart.height = $scope.height;
   $scope.dow_to_mk = function(d) {
-    switch (d) {
+    switch (Math.floor(d)) {
       case 1:
         return 'недела';
       case 2:
@@ -120,7 +124,7 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
     }
   };
   $scope.dow_to_en = function(d) {
-    switch (d) {
+    switch (Math.floor(d)) {
       case 1:
         return 'Sunday';
       case 2:
@@ -136,15 +140,15 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
       case 7:
         return 'Saturday';
       default:
-        return '';
+        return "*" + d + "*";
     }
   };
   $scope.year = parseInt($stateParams.year);
-  queryYear = "SELECT A, dayOfWeek(B), C, I, B, D, J WHERE YEAR(B) = " + $scope.year + " ORDER BY A";
+  queryYear = "SELECT A, dayOfWeek(B), \n       C, I, B, D, J\nWHERE YEAR(B) = " + $scope.year + "\nORDER BY A";
   $http.get($scope.qurl(queryYear)).success(function(data, status) {
     var res;
     res = $scope.to_json(data);
-    return $scope.sales = res.table.rows.map(function(r) {
+    $scope.sales = res.table.rows.map(function(r) {
       var a;
       a = $scope.eval_row(r);
       return {
@@ -157,7 +161,31 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
         jx6: a[6]
       };
     });
+    return $scope.buildSeries();
   });
+  $scope.buildSeries = function() {
+    var a, arr, i, j, len, ref, sale, series;
+    arr = [[], [], [], [], [], [], [], []];
+    ref = $scope.sales;
+    for (j = 0, len = ref.length; j < len; j++) {
+      sale = ref[j];
+      arr[sale.dow].push({
+        x: sale.date,
+        y: sale.lotto
+      });
+    }
+    series = [];
+    for (i in arr) {
+      a = arr[i];
+      if (arr[i].length > 0) {
+        series.push({
+          name: $scope.dow_to_en(i),
+          data: arr[i]
+        });
+      }
+    }
+    return $scope.series = series;
+  };
   query = "SELECT YEAR(B), COUNT(A) GROUP BY YEAR(B) ORDER BY YEAR(B)";
   $http.get($scope.qurl(query)).success(function(data, status) {
     var res;
@@ -178,11 +206,11 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
     console.log('ENTER newSelection');
     $scope.select = v;
     $scope.year = $scope.select.year;
-    queryYear = "SELECT A, dayOfWeek(B), C, I, B, D, J WHERE YEAR(B) = " + $scope.year + " ORDER BY A";
-    $http.get($scope.qurl(queryYear)).success(function(data, status) {
+    queryYear = "SELECT A, dayOfWeek(B),\n       C, I, B, D, J\nWHERE YEAR(B) = " + $scope.year + "\nORDER BY A";
+    return $http.get($scope.qurl(queryYear)).success(function(data, status) {
       var res;
       res = $scope.to_json(data);
-      return $scope.sales = res.table.rows.map(function(r) {
+      $scope.sales = res.table.rows.map(function(r) {
         var a;
         a = $scope.eval_row(r);
         return {
@@ -195,8 +223,8 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
           jx6: a[6]
         };
       });
+      return $scope.buildSeries();
     });
-    return console.log($scope.select);
   };
 }).directive('barChart', function() {
   return {
@@ -349,15 +377,15 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
     restrict: 'A',
     replace: false,
     link: function(scope, el, attrs) {
-      var margin, svg, tooltip;
+      var margin, svg, tooltip, x, xAxis, xmax, xmin, y, yAxis;
       if (attrs.title != null) {
-        scope.sbarChart.title = attrs.title;
+        scope.lineChart.title = attrs.title;
       }
       if (attrs.width != null) {
-        scope.sbarChart.width = parseInt(attrs.width);
+        scope.lineChart.width = parseInt(attrs.width);
       }
       if (attrs.height != null) {
-        scope.sbarChart.height = parseInt(attrs.height);
+        scope.lineChart.height = parseInt(attrs.height);
       }
       margin = {
         top: 15,
@@ -366,7 +394,31 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
         left: 40
       };
       tooltip = d3.select(el[0]).append('div').attr('class', 'tooltip').style('opacity', 0);
-      return svg = d3.select(el[0]).append('svg').attr('width', scope.sbarChart.width + margin.left + margin.right).attr('height', scope.sbarChart.height + margin.top + margin.bottom).append('g').attr('transform', "translate(" + margin.left + ", " + margin.top + ")");
+      svg = d3.select(el[0]).append('svg').attr('width', scope.lineChart.width + margin.left + margin.right).attr('height', scope.lineChart.height + margin.top + margin.bottom).append('g').attr('transform', "translate(" + margin.left + ", " + margin.top + ")");
+      y = d3.scale.linear().rangeRound([scope.lineChart.height, 0]);
+      yAxis = d3.svg.axis().scale(y).orient('left');
+      y.domain([
+        0, d3.max(scope.series.map(function(s) {
+          return d3.max(s.data.map(function(d) {
+            return d.y;
+          }));
+        }))
+      ]);
+      svg.append('g').attr('class', 'y axis').transition().duration(1000).call(yAxis);
+      x = d3.time.scale().range([0, scope.lineChart.width]);
+      xAxis = d3.svg.axis().scale(x).tickFormat(d3.time.format("%W")).orient('bottom');
+      xmax = d3.max(scope.series.map(function(s) {
+        return d3.max(s.data.map(function(d) {
+          return d.x;
+        }));
+      }));
+      xmin = d3.min(scope.series.map(function(s) {
+        return d3.min(s.data.map(function(d) {
+          return d.x;
+        }));
+      }));
+      x.domain([d3.time.format("%W").parse(xmin), d3.time.format("%W").parse(xmax)]);
+      return svg.append('g').attr('class', 'x axis').attr('transform', "translate(0, " + scope.lineChart.height + ")").call(xAxis);
     }
   };
 });
