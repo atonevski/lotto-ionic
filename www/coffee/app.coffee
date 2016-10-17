@@ -124,8 +124,9 @@ angular.module 'app', ['ionic']
       else ''
 
   $scope.year = parseInt $stateParams.year
-  query = "SELECT A, dayOfWeek(B), C, I WHERE YEAR(B) = #{ $scope.year } ORDER BY A"
-  $http.get $scope.qurl(query)
+  # A: draw #, B: date, C: lotto sales, D: x7 (lotto), I: joker sales, J: x6 (joker)
+  queryYear = "SELECT A, dayOfWeek(B), C, I, B, D, J WHERE YEAR(B) = #{ $scope.year } ORDER BY A"
+  $http.get $scope.qurl(queryYear)
     .success (data, status) ->
       res = $scope.to_json data
       $scope.sales = res.table.rows.map (r) ->
@@ -135,7 +136,39 @@ angular.module 'app', ['ionic']
           dow:    a[1]
           lotto:  a[2]
           joker:  a[3]
+          date:   a[4]
+          lx7:    a[5]
+          jx6:    a[6]
         }
+
+  query = "SELECT YEAR(B), COUNT(A) GROUP BY YEAR(B) ORDER BY YEAR(B)"
+  $http.get $scope.qurl(query)
+    .success (data, status) ->
+      res = $scope.to_json data
+      $scope.years = res.table.rows.map (r) ->
+        a = $scope.eval_row r
+        { year: a[0], draws: a[1] }
+      $scope.select = ($scope.years.filter (x) -> x.year is $scope.year)[0]
+  $scope.newSelection = (v) ->
+    console.log 'ENTER newSelection'
+    $scope.select = v
+    $scope.year   = $scope.select.year
+    queryYear = "SELECT A, dayOfWeek(B), C, I, B, D, J WHERE YEAR(B) = #{ $scope.year } ORDER BY A"
+    $http.get $scope.qurl(queryYear)
+      .success (data, status) ->
+        res = $scope.to_json data
+        $scope.sales = res.table.rows.map (r) ->
+          a = $scope.eval_row r
+          {
+            draw:   a[0]
+            dow:    a[1]
+            lotto:  a[2]
+            joker:  a[3]
+            date:   a[4]
+            lx7:    a[5]
+            jx6:    a[6]
+          }
+    console.log $scope.select
 
 .directive 'barChart', () ->
   {
@@ -328,4 +361,27 @@ angular.module 'app', ['ionic']
           .attr 'y', (d, i) -> 20*i + 8
           .attr 'dy', 4
           .text (d) -> d
+  }
+
+.directive 'lineChart', () ->
+  {
+    restrict: 'A'
+    replace:  false
+    link:     (scope, el, attrs) ->
+      scope.sbarChart.title   = attrs.title             if attrs.title?
+      scope.sbarChart.width   = parseInt(attrs.width)   if attrs.width?
+      scope.sbarChart.height  = parseInt(attrs.height)  if attrs.height?
+      margin = { top: 15, right: 120, bottom: 40, left: 40 }
+
+      tooltip = d3.select el[0]
+                  .append 'div'
+                  .attr 'class', 'tooltip'
+                  .style 'opacity', 0
+
+      svg = d3.select el[0]
+              .append 'svg'
+              .attr 'width', scope.sbarChart.width + margin.left + margin.right
+              .attr 'height', scope.sbarChart.height + margin.top + margin.bottom
+              .append 'g'
+              .attr 'transform', "translate(#{margin.left}, #{margin.top})"
   }

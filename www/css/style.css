@@ -11,7 +11,7 @@
   border-width: 1px;
 }
 
-.divider-weekly {
+.divider-weekly, .divider-annually {
   font-size: 12px;
   font-weight: bold;
 
