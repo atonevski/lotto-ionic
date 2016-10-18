@@ -56,7 +56,14 @@ angular.module 'app', ['ionic']
     JSON.parse match[2]
 
   # res.table.row[i]; string/text values are not eval-ed
-  eval_row = (r) -> r.c.map (c)-> if c.f? then eval(c.v) else c.v
+  eval_row = (r) -> r.c.map (c)->
+                      if c.f?
+                        if typeof(c.v) == 'string' && c.v.match /^Date/
+                          eval 'new ' + c.v
+                        else
+                          eval c.v
+                      else
+                        c.v
 
   $scope.KEY ='1R5S3ZZg1ypygf_fpRoWnsYmeqnNI2ZVosQh2nJ3Aqm0'
   $scope.URL = "https://spreadsheets.google.com/"
@@ -106,6 +113,9 @@ angular.module 'app', ['ionic']
   $scope.lineChart = { }
   $scope.lineChart.width  = $scope.width
   $scope.lineChart.height = $scope.height
+
+  # since ng-if not working
+  $scope.lineChart.hide = true
 
   $scope.dow_to_mk = (d) ->
     switch Math.floor d
@@ -159,7 +169,7 @@ angular.module 'app', ['ionic']
     series = [ ]
     for i, a of arr
       if arr[i].length > 0
-        series.push { name: $scope.dow_to_en(i), data: arr[i] }
+        series.push { name: $scope.dow_to_mk(i), data: arr[i] }
     $scope.series = series
         
 
@@ -173,7 +183,7 @@ angular.module 'app', ['ionic']
         { year: a[0], draws: a[1] }
       $scope.select = ($scope.years.filter (x) -> x.year is $scope.year)[0]
   $scope.newSelection = (v) ->
-    console.log 'ENTER newSelection'
+    $scope.lineChart.hide = true
     $scope.select = v
     $scope.year   = $scope.select.year
     queryYear = """SELECT A, dayOfWeek(B),
@@ -196,6 +206,7 @@ angular.module 'app', ['ionic']
             jx6:    a[6]
           }
         $scope.buildSeries()
+        $scope.lineChart.hide = true
 
 .directive 'barChart', () ->
   {
@@ -424,14 +435,40 @@ angular.module 'app', ['ionic']
 
       x = d3.time.scale().range [0, scope.lineChart.width]
       xAxis = d3.svg.axis().scale(x)
-                .tickFormat(d3.time.format("%W"))
                 .orient 'bottom'
+                .tickFormat d3.time.format("%W")
 
-      xmax = d3.max scope.series.map (s) -> d3.max(s.data.map (d) -> d.x)
-      xmin = d3.min scope.series.map (s) -> d3.min(s.data.map (d) -> d.x)
-      x.domain [d3.time.format("%W").parse(xmin), d3.time.format("%W").parse(xmax)]
+      x.domain [
+        d3.min(scope.series.map((s) -> s.data[0].x)),
+        d3.max(scope.series.map((s) -> s.data[-1..][0].x)),
+      ]
+
       svg.append 'g'
          .attr 'class', 'x axis'
          .attr 'transform', "translate(0, #{scope.lineChart.height})"
          .call xAxis
+
+      line = d3.svg.line()
+               .x (d) -> x(d.x)
+               .y (d) -> y(d.y)
+
+      for i, s of scope.series
+        svg.append 'path'
+          .datum s.data
+          .attr 'class', 'line'
+          .attr 'stroke', d3.scale.category10().range()[i]
+          .attr 'd', line
+
+      legend = svg.append('g').attr 'class', 'legend'
+
+      legend.selectAll 'text'
+            .data scope.series.map (s) -> s.name
+            .enter()
+            .append 'text'
+            .attr 'class', 'legend'
+            .attr 'x', scope.lineChart.width + 4
+            .attr 'y', (d, i) -> 20*i + 8
+            .attr 'dy', 4
+            .style 'fill', (d, i) ->d3.rgb(d3.scale.category10().range()[i]).darker(0.5)
+            .text (d) -> d
   }

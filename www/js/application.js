@@ -49,7 +49,11 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
   eval_row = function(r) {
     return r.c.map(function(c) {
       if (c.f != null) {
-        return eval(c.v);
+        if (typeof c.v === 'string' && c.v.match(/^Date/)) {
+          return eval('new ' + c.v);
+        } else {
+          return eval(c.v);
+        }
       } else {
         return c.v;
       }
@@ -103,6 +107,7 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
   $scope.lineChart = {};
   $scope.lineChart.width = $scope.width;
   $scope.lineChart.height = $scope.height;
+  $scope.lineChart.hide = true;
   $scope.dow_to_mk = function(d) {
     switch (Math.floor(d)) {
       case 1:
@@ -179,7 +184,7 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
       a = arr[i];
       if (arr[i].length > 0) {
         series.push({
-          name: $scope.dow_to_en(i),
+          name: $scope.dow_to_mk(i),
           data: arr[i]
         });
       }
@@ -203,7 +208,7 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
     }))[0];
   });
   return $scope.newSelection = function(v) {
-    console.log('ENTER newSelection');
+    $scope.lineChart.hide = true;
     $scope.select = v;
     $scope.year = $scope.select.year;
     queryYear = "SELECT A, dayOfWeek(B),\n       C, I, B, D, J\nWHERE YEAR(B) = " + $scope.year + "\nORDER BY A";
@@ -223,7 +228,8 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
           jx6: a[6]
         };
       });
-      return $scope.buildSeries();
+      $scope.buildSeries();
+      return $scope.lineChart.hide = true;
     });
   };
 }).directive('barChart', function() {
@@ -377,7 +383,7 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
     restrict: 'A',
     replace: false,
     link: function(scope, el, attrs) {
-      var margin, svg, tooltip, x, xAxis, xmax, xmin, y, yAxis;
+      var i, legend, line, margin, ref, s, svg, tooltip, x, xAxis, y, yAxis;
       if (attrs.title != null) {
         scope.lineChart.title = attrs.title;
       }
@@ -406,19 +412,35 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
       ]);
       svg.append('g').attr('class', 'y axis').transition().duration(1000).call(yAxis);
       x = d3.time.scale().range([0, scope.lineChart.width]);
-      xAxis = d3.svg.axis().scale(x).tickFormat(d3.time.format("%W")).orient('bottom');
-      xmax = d3.max(scope.series.map(function(s) {
-        return d3.max(s.data.map(function(d) {
-          return d.x;
-        }));
-      }));
-      xmin = d3.min(scope.series.map(function(s) {
-        return d3.min(s.data.map(function(d) {
-          return d.x;
-        }));
-      }));
-      x.domain([d3.time.format("%W").parse(xmin), d3.time.format("%W").parse(xmax)]);
-      return svg.append('g').attr('class', 'x axis').attr('transform', "translate(0, " + scope.lineChart.height + ")").call(xAxis);
+      xAxis = d3.svg.axis().scale(x).orient('bottom').tickFormat(d3.time.format("%W"));
+      x.domain([
+        d3.min(scope.series.map(function(s) {
+          return s.data[0].x;
+        })), d3.max(scope.series.map(function(s) {
+          return s.data.slice(-1)[0].x;
+        }))
+      ]);
+      svg.append('g').attr('class', 'x axis').attr('transform', "translate(0, " + scope.lineChart.height + ")").call(xAxis);
+      line = d3.svg.line().x(function(d) {
+        return x(d.x);
+      }).y(function(d) {
+        return y(d.y);
+      });
+      ref = scope.series;
+      for (i in ref) {
+        s = ref[i];
+        svg.append('path').datum(s.data).attr('class', 'line').attr('stroke', d3.scale.category10().range()[i]).attr('d', line);
+      }
+      legend = svg.append('g').attr('class', 'legend');
+      return legend.selectAll('text').data(scope.series.map(function(s) {
+        return s.name;
+      })).enter().append('text').attr('class', 'legend').attr('x', scope.lineChart.width + 4).attr('y', function(d, i) {
+        return 20 * i + 8;
+      }).attr('dy', 4).style('fill', function(d, i) {
+        return d3.rgb(d3.scale.category10().range()[i]).darker(0.5);
+      }).text(function(d) {
+        return d;
+      });
     }
   };
 });

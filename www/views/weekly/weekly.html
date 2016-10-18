@@ -2,17 +2,18 @@
   <ion-nav-title>Уплата {{ year }}</ion-nav-title>
   <ion-content>  
     <div class='row'>
-      <div class='col text-left' ng-click="hideChart = !hideChart">
+      <div class='col text-left' ng-click="lineChart.hide = !lineChart.hide">
         <a><i class='icon ion-ios-pulse-strong'></i></a>
       </div>
       <div class='col col-offset-5 text-right'>
         <select ng-model='select'
                 ng-options="y as y.year for y in years track by y.year"
-                ng-change='newSelection(select)'>
+                ng-change='newSelection(select)'
+                ng-click="hideChart = false">
         </select>
       </div>
     </div>
-    <div id='line-chart-id' class='row' line-chart ng-if='!hideChart'
+    <div id='line-chart-id' class='row' line-chart ng-if='!lineChart.hide'
          width='240' height='200' title='Неделно/кола'>
     </div>
     <div class='list'>
