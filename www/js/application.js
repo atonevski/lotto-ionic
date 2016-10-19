@@ -473,15 +473,15 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
               draw: ww.draw
             }, ww
           ];
-          svg.append('path').datum(d).attr('id', "draw-" + ww.draw).attr('class', 'line').attr('stroke', d3.scale.category10().range()[i]).attr('stroke-dasharray', '1 1').on('click', function(d, i) {
+          svg.append('path').datum(d).attr('id', "draw-" + ww.draw).attr('class', 'line').attr('stroke', d3.scale.category10().range()[i]).attr('stroke-dasharray', '3 1').on('click', function(d, i) {
             var t;
-            t = "<p style='text-align: center;'>\n  <b>коло: " + d.draw + "</b><br />\n</p>";
+            t = "<p style='text-align: center;'>\n  <b>коло: " + d[1].draw + "</b><br />\n</p>";
             tooltip.html(t);
             tooltip.transition().duration(1000).style('opacity', 0.75);
             tooltip.html(t).style('left', d3.event.pageX + 'px').style('top', (d3.event.pageY - 60) + 'px').style('opacity', 1);
             return tooltip.transition().duration(3500).style('opacity', 0);
           }).attr('d', line).append('title').html(function(d, i) {
-            return "<strong>коло: " + ww.draw + "</strong>";
+            return "<strong>коло: " + d[1].draw + "</strong>";
           });
         }
       }

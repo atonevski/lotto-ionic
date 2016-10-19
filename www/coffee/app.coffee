@@ -497,11 +497,11 @@ angular.module 'app', ['ionic']
              .attr 'class', 'line'
              # .attr 'stroke-dasharray', "3, 3"
              .attr 'stroke', d3.scale.category10().range()[i]
-             .attr 'stroke-dasharray', '1 1'
+             .attr 'stroke-dasharray', '3 1'
              .on 'click', (d, i) ->
                 t = """
                   <p style='text-align: center;'>
-                    <b>коло: #{ d.draw }</b><br />
+                    <b>коло: #{ d[1].draw }</b><br />
                   </p>
                 """
                 tooltip.html t
@@ -515,7 +515,7 @@ angular.module 'app', ['ionic']
                         .style 'opacity', 0
              .attr 'd', line
              .append 'title'
-             .html (d, i) -> "<strong>коло: #{ ww.draw }</strong>"
+             .html (d, i) -> "<strong>коло: #{ d[1].draw }</strong>"
 
       # hints for x7, 1st prize winners
 
