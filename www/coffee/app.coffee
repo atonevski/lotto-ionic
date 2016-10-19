@@ -23,6 +23,10 @@ angular.module 'app', ['ionic']
       templateUrl:  'views/weekly/weekly.html'
       controller:   'Weekly'
     }
+    .state 'about', {
+      url:          '/about'
+      templateUrl:  'views/about/about.html'
+    }
   $urlRouterProvider.otherwise '/home'
 .run ($ionicPlatform) ->
   $ionicPlatform.ready () ->
@@ -91,7 +95,7 @@ angular.module 'app', ['ionic']
   $scope.sbarChart.width  = $scope.width
   $scope.sbarChart.height = $scope.height
   
-  query = 'SELECT YEAR(B), COUNT(A), SUM(C), SUM(I) GROUP BY YEAR(B) ORDER BY YEAR(B)'
+  query = "SELECT YEAR(B), COUNT(A), SUM(C), SUM(I), SUM(D) GROUP BY YEAR(B) ORDER BY YEAR(B)"
   $ionicLoading.show()
   $http.get $scope.qurl(query)
     .success (data, status) ->
@@ -103,6 +107,7 @@ angular.module 'app', ['ionic']
           draws:    a[1]
           'лото':   a[2]
           'џокер':  a[3]
+          x7:       a[4]
         }
       $scope.sbarChart.data   = $scope.sales
       $scope.sbarChart.labels = 'year'
@@ -179,7 +184,7 @@ angular.module 'app', ['ionic']
   $scope.buildSeries = () ->
     arr = [[], [],  [], [], [], [], [], [] ]
     for sale in $scope.sales
-      arr[sale.dow].push { x: sale.date, y: sale.lotto }
+      arr[sale.dow].push { x: sale.date, y: sale.lotto, lx7: sale.lx7, draw: sale.draw }
     series = [ ]
     for i, a of arr
       if arr[i].length > 0
@@ -474,12 +479,45 @@ angular.module 'app', ['ionic']
                .x (d) -> x(d.x)
                .y (d) -> y(d.y)
 
+      win = []
       for i, s of scope.series
         svg.append 'path'
           .datum s.data
           .attr 'class', 'line'
           .attr 'stroke', d3.scale.category10().range()[i]
           .attr 'd', line
+        win[i] = s.data.filter (d) -> d.lx7 > 0
+
+      for i, w of win
+        for ww in w
+          d = [ { x: ww.x, y: 0, draw: ww.draw }, ww ]
+          svg.append 'path'
+             .datum d
+             .attr 'id', "draw-#{ ww.draw }"
+             .attr 'class', 'line'
+             # .attr 'stroke-dasharray', "3, 3"
+             .attr 'stroke', d3.scale.category10().range()[i]
+             .attr 'stroke-dasharray', '1 1'
+             .on 'click', (d, i) ->
+                t = """
+                  <p style='text-align: center;'>
+                    <b>коло: #{ d.draw }</b><br />
+                  </p>
+                """
+                tooltip.html t
+                tooltip.transition().duration 1000
+                        .style 'opacity', 0.75
+                tooltip.html t
+                        .style 'left', (d3.event.pageX) + 'px'
+                        .style 'top', (d3.event.pageY-60) + 'px'
+                        .style 'opacity', 1
+                tooltip.transition().duration 3500
+                        .style 'opacity', 0
+             .attr 'd', line
+             .append 'title'
+             .html (d, i) -> "<strong>коло: #{ ww.draw }</strong>"
+
+      # hints for x7, 1st prize winners
 
       legend = svg.append('g').attr 'class', 'legend'
 

@@ -13,6 +13,9 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
     url: '/weekly/:year',
     templateUrl: 'views/weekly/weekly.html',
     controller: 'Weekly'
+  }).state('about', {
+    url: '/about',
+    templateUrl: 'views/about/about.html'
   });
   return $urlRouterProvider.otherwise('/home');
 }).run(function($ionicPlatform) {
@@ -83,7 +86,7 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
   $scope.sbarChart.title = 'Bar chart title';
   $scope.sbarChart.width = $scope.width;
   $scope.sbarChart.height = $scope.height;
-  query = 'SELECT YEAR(B), COUNT(A), SUM(C), SUM(I) GROUP BY YEAR(B) ORDER BY YEAR(B)';
+  query = "SELECT YEAR(B), COUNT(A), SUM(C), SUM(I), SUM(D) GROUP BY YEAR(B) ORDER BY YEAR(B)";
   $ionicLoading.show();
   return $http.get($scope.qurl(query)).success(function(data, status) {
     var res;
@@ -95,7 +98,8 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
         year: a[0],
         draws: a[1],
         'лото': a[2],
-        'џокер': a[3]
+        'џокер': a[3],
+        x7: a[4]
       };
     });
     $scope.sbarChart.data = $scope.sales;
@@ -190,7 +194,9 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
       sale = ref[j];
       arr[sale.dow].push({
         x: sale.date,
-        y: sale.lotto
+        y: sale.lotto,
+        lx7: sale.lx7,
+        draw: sale.draw
       });
     }
     series = [];
@@ -404,7 +410,7 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
     restrict: 'A',
     replace: false,
     link: function(scope, el, attrs) {
-      var i, legend, line, margin, ref, s, svg, tooltip, x, xAxis, y, yAxis;
+      var d, i, j, legend, len, line, margin, ref, s, svg, tooltip, w, win, ww, x, xAxis, y, yAxis;
       if (attrs.title != null) {
         scope.lineChart.title = attrs.title;
       }
@@ -447,10 +453,37 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
       }).y(function(d) {
         return y(d.y);
       });
+      win = [];
       ref = scope.series;
       for (i in ref) {
         s = ref[i];
         svg.append('path').datum(s.data).attr('class', 'line').attr('stroke', d3.scale.category10().range()[i]).attr('d', line);
+        win[i] = s.data.filter(function(d) {
+          return d.lx7 > 0;
+        });
+      }
+      for (i in win) {
+        w = win[i];
+        for (j = 0, len = w.length; j < len; j++) {
+          ww = w[j];
+          d = [
+            {
+              x: ww.x,
+              y: 0,
+              draw: ww.draw
+            }, ww
+          ];
+          svg.append('path').datum(d).attr('id', "draw-" + ww.draw).attr('class', 'line').attr('stroke', d3.scale.category10().range()[i]).attr('stroke-dasharray', '1 1').on('click', function(d, i) {
+            var t;
+            t = "<p style='text-align: center;'>\n  <b>коло: " + d.draw + "</b><br />\n</p>";
+            tooltip.html(t);
+            tooltip.transition().duration(1000).style('opacity', 0.75);
+            tooltip.html(t).style('left', d3.event.pageX + 'px').style('top', (d3.event.pageY - 60) + 'px').style('opacity', 1);
+            return tooltip.transition().duration(3500).style('opacity', 0);
+          }).attr('d', line).append('title').html(function(d, i) {
+            return "<strong>коло: " + ww.draw + "</strong>";
+          });
+        }
       }
       legend = svg.append('g').attr('class', 'legend');
       return legend.selectAll('text').data(scope.series.map(function(s) {

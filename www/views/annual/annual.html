@@ -1,8 +1,8 @@
 <ion-view view-title='Годишна уплата'>
   <ion-content>
     <div class='row' ng-click="hideChart = !hideChart">
-      <div class='col text-right'>
-        <a><i class='icon ion-stats-bars'></i></a>
+      <div class='col text-left'>
+        <a style='font-size: 24px'><i class='icon ion-stats-bars'></i></a>
       </div>
     </div>
     <div id='bar-chart-id' class='row' stacked-bar-chart ng-if='!hideChart'
@@ -12,7 +12,8 @@
       <div class='item item-divider divider-annually'>
         <div class='row row-no-padding'>
           <div class='col col-20'>година</div>
-          <div class='col col-20 text-center'>изв.</div>
+          <div class='col col-10 text-center'>изв.</div>
+          <div class='col col-10 text-center'>x7</div>
           <div class='col col-30 text-right'>лото</div>
           <div class='col col-30 text-right'>џокер</div>
         </div>
@@ -21,7 +22,8 @@
         <div class='row row-no-padding'>
           <div class='col col-20'><a href='#/weekly/{{ s.year }}'>
             <i class='icon ion-android-arrow-dropright'></i></a>{{ s.year }}</div>
-          <div class='col col-20 text-center'>{{ s.draws }}</div>
+          <div class='col col-10 text-center'>{{ s.draws }}</div>
+          <div class='col col-10 text-center'>{{ s.x7 }}</div>
           <div class='col col-30 text-right'>{{ thou_sep(s['лото']) }}</div>
           <div class='col col-30 text-right'>{{ thou_sep(s['џокер']) }}</div>
         </div>

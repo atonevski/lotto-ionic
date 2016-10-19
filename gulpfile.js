@@ -28,14 +28,20 @@ gulp.task('sass', function(done) {
     .on('end', done);
 });
 
+function swallowError(error) {
+  console.log(error.toString());
+  this.emit('end');
+}
+
 gulp.task('coffee', [], function(done) {
   gulp.src(paths.coffee)
   .pipe(coffee({bare: true})
-  .on('error', gutil.log.bind(gutil, 'Coffee Error')))
+//  .on('error', gutil.log.bind(gutil, 'Coffee Error')))
+  .on('error', swallowError))
   .pipe(concat('application.js'))
   .pipe(gulp.dest('./www/js'))
   .on('end', done)
-})
+});
 
 gulp.task('watch', function() {
   gulp.watch(paths.coffee, ['coffee'])
