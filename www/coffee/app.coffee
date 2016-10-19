@@ -83,7 +83,7 @@ angular.module 'app', ['ionic']
   $scope.height = window.innerHeight
   console.log "WxH: #{ window.innerWidth }x#{ window.innerHeight }"
 
-.controller 'Annual', ($scope, $http, $ionicPopup, $timeout) ->
+.controller 'Annual', ($scope, $http, $ionicPopup, $timeout, $ionicLoading) ->
   # bar chart
   $scope.hideChart = true
   $scope.sbarChart = { }
@@ -92,6 +92,7 @@ angular.module 'app', ['ionic']
   $scope.sbarChart.height = $scope.height
   
   query = 'SELECT YEAR(B), COUNT(A), SUM(C), SUM(I) GROUP BY YEAR(B) ORDER BY YEAR(B)'
+  $ionicLoading.show()
   $http.get $scope.qurl(query)
     .success (data, status) ->
       res = $scope.to_json data
@@ -106,8 +107,14 @@ angular.module 'app', ['ionic']
       $scope.sbarChart.data   = $scope.sales
       $scope.sbarChart.labels = 'year'
       $scope.sbarChart.categories = ['лото', 'џокер']
+      $ionicLoading.hide()
+    .error (err) ->
+      $ionicLoading.show({
+        template: "Не може да се вчитаат годишните податоци. Пробај подоцна."
+        duration: 3000
+      })
           
-.controller 'Weekly', ($scope, $http, $stateParams) ->
+.controller 'Weekly', ($scope, $http, $stateParams, $ionicLoading) ->
   # line chart
   $scope.hideChart = true
   $scope.lineChart = { }
@@ -145,6 +152,7 @@ angular.module 'app', ['ionic']
                         C, I, B, D, J
                  WHERE YEAR(B) = #{ $scope.year }
                  ORDER BY A"""
+  $ionicLoading.show()
   $http.get $scope.qurl(queryYear)
     .success (data, status) ->
       res = $scope.to_json data
@@ -160,6 +168,12 @@ angular.module 'app', ['ionic']
           jx6:    a[6]
         }
       $scope.buildSeries()
+      $ionicLoading.hide()
+    .error (err) ->
+      $ionicLoading.show({
+        template: "Не може да се вчитаат податоци за #{ $sope.year } година. Пробај подоцна."
+        duration: 3000
+      })
 
   # build line chart series (only lotto sales)
   $scope.buildSeries = () ->
@@ -191,6 +205,7 @@ angular.module 'app', ['ionic']
                    WHERE YEAR(B) = #{ $scope.year }
                    ORDER BY A"""
     # update scope.sales and scope.series
+    $ionicLoading.show()
     $http.get $scope.qurl(queryYear)
       .success (data, status) ->
         res = $scope.to_json data
@@ -207,6 +222,13 @@ angular.module 'app', ['ionic']
           }
         $scope.buildSeries()
         $scope.lineChart.hide = true
+        $ionicLoading.hide()
+      .error (err) ->
+        $ionicLoading.show({
+          template: "Не може да се вчитаат податоци за #{ $sope.year } година." +
+                    " Пробај подоцна."
+          duration: 3000
+        })
 
 .directive 'barChart', () ->
   {

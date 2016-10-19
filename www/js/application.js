@@ -76,7 +76,7 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
   $scope.width = window.innerWidth;
   $scope.height = window.innerHeight;
   return console.log("WxH: " + window.innerWidth + "x" + window.innerHeight);
-}).controller('Annual', function($scope, $http, $ionicPopup, $timeout) {
+}).controller('Annual', function($scope, $http, $ionicPopup, $timeout, $ionicLoading) {
   var query;
   $scope.hideChart = true;
   $scope.sbarChart = {};
@@ -84,6 +84,7 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
   $scope.sbarChart.width = $scope.width;
   $scope.sbarChart.height = $scope.height;
   query = 'SELECT YEAR(B), COUNT(A), SUM(C), SUM(I) GROUP BY YEAR(B) ORDER BY YEAR(B)';
+  $ionicLoading.show();
   return $http.get($scope.qurl(query)).success(function(data, status) {
     var res;
     res = $scope.to_json(data);
@@ -99,9 +100,15 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
     });
     $scope.sbarChart.data = $scope.sales;
     $scope.sbarChart.labels = 'year';
-    return $scope.sbarChart.categories = ['лото', 'џокер'];
+    $scope.sbarChart.categories = ['лото', 'џокер'];
+    return $ionicLoading.hide();
+  }).error(function(err) {
+    return $ionicLoading.show({
+      template: "Не може да се вчитаат годишните податоци. Пробај подоцна.",
+      duration: 3000
+    });
   });
-}).controller('Weekly', function($scope, $http, $stateParams) {
+}).controller('Weekly', function($scope, $http, $stateParams, $ionicLoading) {
   var query, queryYear;
   $scope.hideChart = true;
   $scope.lineChart = {};
@@ -150,6 +157,7 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
   };
   $scope.year = parseInt($stateParams.year);
   queryYear = "SELECT A, dayOfWeek(B), \n       C, I, B, D, J\nWHERE YEAR(B) = " + $scope.year + "\nORDER BY A";
+  $ionicLoading.show();
   $http.get($scope.qurl(queryYear)).success(function(data, status) {
     var res;
     res = $scope.to_json(data);
@@ -166,7 +174,13 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
         jx6: a[6]
       };
     });
-    return $scope.buildSeries();
+    $scope.buildSeries();
+    return $ionicLoading.hide();
+  }).error(function(err) {
+    return $ionicLoading.show({
+      template: "Не може да се вчитаат податоци за " + $sope.year + " година. Пробај подоцна.",
+      duration: 3000
+    });
   });
   $scope.buildSeries = function() {
     var a, arr, i, j, len, ref, sale, series;
@@ -212,6 +226,7 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
     $scope.select = v;
     $scope.year = $scope.select.year;
     queryYear = "SELECT A, dayOfWeek(B),\n       C, I, B, D, J\nWHERE YEAR(B) = " + $scope.year + "\nORDER BY A";
+    $ionicLoading.show();
     return $http.get($scope.qurl(queryYear)).success(function(data, status) {
       var res;
       res = $scope.to_json(data);
@@ -229,7 +244,13 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
         };
       });
       $scope.buildSeries();
-      return $scope.lineChart.hide = true;
+      $scope.lineChart.hide = true;
+      return $ionicLoading.hide();
+    }).error(function(err) {
+      return $ionicLoading.show({
+        template: ("Не може да се вчитаат податоци за " + $sope.year + " година.") + " Пробај подоцна.",
+        duration: 3000
+      });
     });
   };
 }).directive('barChart', function() {
