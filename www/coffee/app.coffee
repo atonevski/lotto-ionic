@@ -23,6 +23,11 @@ angular.module 'app', ['ionic']
       templateUrl:  'views/weekly/weekly.html'
       controller:   'Weekly'
     }
+    .state 'stats', {
+      url:          '/stats'
+      templateUrl:  'views/stats/freqs.html'
+      controller:   'Stats'
+    }
     .state 'about', {
       url:          '/about'
       templateUrl:  'views/about/about.html'
@@ -234,6 +239,41 @@ angular.module 'app', ['ionic']
                     " Пробај подоцна."
           duration: 3000
         })
+
+.controller 'Stats', ($scope, $http, $ionicLoading) ->
+  # A: draw #, B: date, P..W: winning column lotto, X: winning column joker
+  query = """SELECT A, B, P, Q, R, S, T, U, V, W, X
+             ORDER BY B"""
+  $ionicLoading.show()
+  $http.get $scope.qurl(query)
+    .success (data, status) ->
+      res = $scope.to_json data
+      $scope.winColumns = res.table.rows.map (r) ->
+        a = $scope.eval_row r
+        {
+          draw:   a[0]
+          date:   a[1]
+          lotto:  [ a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9] ]
+          joker:  a[10].split ''
+        }
+      $buildLottoFreqs()
+      $ionicLoading.hide()
+    .error (err) ->
+      $ionicLoading.show({
+        template: "Не може да се вчитаат добитните комбинации. Пробај подоцна."
+        duration: 3000
+      })
+
+  # change this method to have a parameter 'all', 'stresa', 'venus'
+  # and to produce different tables
+  $buildLottoFreqs = () ->
+    arr = [0..34].map (e) -> ([0..7].map () -> 0)
+    for row in $scope.winColumns
+      for i, n of row.lotto
+        arr[n][i]++
+    for i, a of arr
+      arr[i].push a.reduce (t, e) -> t + e
+    $scope.freqs = arr[1..-1]
 
 .directive 'barChart', () ->
   {
@@ -476,6 +516,7 @@ angular.module 'app', ['ionic']
          .call xAxis
 
       line = d3.svg.line()
+               .interpolate("basis")
                .x (d) -> x(d.x)
                .y (d) -> y(d.y)
 

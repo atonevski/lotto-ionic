@@ -1,5 +1,5 @@
 /* Empty. Add your own CSS if you like */
-.item-annual, .item-weekly { 
+.item-annual, .item-weekly, .item-stats { 
   padding-top: 2px;  
   padding-bottom: 2px; 
   margin: 0;
@@ -11,7 +11,9 @@
   border-width: 1px;
 }
 
-.divider-weekly, .divider-annually {
+.item-stats { font-size: 12px; }
+
+.divider-weekly, .divider-annually, .divider-stats {
   font-size: 12px;
   font-weight: bold;
 
@@ -20,8 +22,8 @@
   border-width: 1px;
 }
 
-.saturday, .thursday{ background-color: #F0F3F8; }
-.wednesday, .monday { background-color: #FAFAFA; }
+.saturday, .thursday, .even { background-color: #F0F3F8; }
+.wednesday, .monday, .odd { background-color: #FAFAFA; }
 
 .axis text {
   font-family: 'Open Sans Condensed';

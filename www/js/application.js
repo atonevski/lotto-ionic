@@ -13,6 +13,10 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
     url: '/weekly/:year',
     templateUrl: 'views/weekly/weekly.html',
     controller: 'Weekly'
+  }).state('stats', {
+    url: '/stats',
+    templateUrl: 'views/stats/freqs.html',
+    controller: 'Stats'
   }).state('about', {
     url: '/about',
     templateUrl: 'views/about/about.html'
@@ -259,6 +263,59 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
       });
     });
   };
+}).controller('Stats', function($scope, $http, $ionicLoading) {
+  var $buildLottoFreqs, query;
+  query = "SELECT A, B, P, Q, R, S, T, U, V, W, X\nORDER BY B";
+  $ionicLoading.show();
+  $http.get($scope.qurl(query)).success(function(data, status) {
+    var res;
+    res = $scope.to_json(data);
+    $scope.winColumns = res.table.rows.map(function(r) {
+      var a;
+      a = $scope.eval_row(r);
+      return {
+        draw: a[0],
+        date: a[1],
+        lotto: [a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9]],
+        joker: a[10].split('')
+      };
+    });
+    $buildLottoFreqs();
+    return $ionicLoading.hide();
+  }).error(function(err) {
+    return $ionicLoading.show({
+      template: "Не може да се вчитаат добитните комбинации. Пробај подоцна.",
+      duration: 3000
+    });
+  });
+  return $buildLottoFreqs = function() {
+    var a, arr, i, j, k, len, n, ref, ref1, results, row;
+    arr = (function() {
+      results = [];
+      for (j = 0; j <= 34; j++){ results.push(j); }
+      return results;
+    }).apply(this).map(function(e) {
+      return [0, 1, 2, 3, 4, 5, 6, 7].map(function() {
+        return 0;
+      });
+    });
+    ref = $scope.winColumns;
+    for (k = 0, len = ref.length; k < len; k++) {
+      row = ref[k];
+      ref1 = row.lotto;
+      for (i in ref1) {
+        n = ref1[i];
+        arr[n][i]++;
+      }
+    }
+    for (i in arr) {
+      a = arr[i];
+      arr[i].push(a.reduce(function(t, e) {
+        return t + e;
+      }));
+    }
+    return $scope.freqs = arr.slice(1);
+  };
 }).directive('barChart', function() {
   return {
     restrict: 'A',
@@ -448,7 +505,7 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
         }))
       ]);
       svg.append('g').attr('class', 'x axis').attr('transform', "translate(0, " + scope.lineChart.height + ")").call(xAxis);
-      line = d3.svg.line().x(function(d) {
+      line = d3.svg.line().interpolate("basis").x(function(d) {
         return x(d.x);
       }).y(function(d) {
         return y(d.y);

@@ -1,0 +1,35 @@
+<ion-view title='Статистика на извлечени броеви'>
+ <ion-content>
+  <div class='list'>
+    <div class='item item-divider divider-stats'>
+      <div class='row row-no-padding'>
+        <div class='col'>број</div>
+        <div class='col'>1ви</div>
+        <div class='col'>2ри</div>
+        <div class='col'>3ти</div>
+        <div class='col'>4ти</div>
+        <div class='col'>5ти</div>
+        <div class='col'>6ти</div>
+        <div class='col'>7ми</div>
+        <div class='col'>доп.</div>
+        <div class='col'>Σ</div>
+      </div>
+    </div>
+    <div class='item item-stats' ng-repeat='f in freqs'
+         ng-class="{ even: $index % 2 == 0, odd: $index % 2 == 1 }">
+      <div class='row row-no-padding'>
+        <div class='col'>{{ $index + 1 }}</div>
+        <div class='col'>{{ f[0] }}</div>
+        <div class='col'>{{ f[1] }}</div>
+        <div class='col'>{{ f[2] }}</div>
+        <div class='col'>{{ f[3] }}</div>
+        <div class='col'>{{ f[4] }}</div>
+        <div class='col'>{{ f[5] }}</div>
+        <div class='col'>{{ f[6] }}</div>
+        <div class='col'>{{ f[7] }}</div>
+        <div class='col'><strong>{{ f[8] }}</strong></div>
+      </div>
+    </div>
+  </div>
+ </ion-content>
+</ion-view>
