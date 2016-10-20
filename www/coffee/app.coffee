@@ -241,6 +241,12 @@ angular.module 'app', ['ionic']
         })
 
 .controller 'Stats', ($scope, $http, $ionicLoading) ->
+  $scope.hideChart = true
+  $scope.sbarChart = { }
+  $scope.sbarChart.title  = 'Bar chart title'
+  $scope.sbarChart.width  = $scope.width
+  $scope.sbarChart.height = $scope.height
+
   # A: draw #, B: date, P..W: winning column lotto, X: winning column joker
   query = """SELECT A, B, P, Q, R, S, T, U, V, W, X
              ORDER BY B"""
@@ -273,7 +279,24 @@ angular.module 'app', ['ionic']
         arr[n][i]++
     for i, a of arr
       arr[i].push a.reduce (t, e) -> t + e
-    $scope.freqs = arr[1..-1]
+    $scope.freqs = arr[1..-1].map (a, i) ->
+        {
+          number: (i + 1)
+          '1ви':  a[0]
+          '2ри':  a[1]
+          '3ти':  a[2]
+          '4ти':  a[3]
+          '5ти':  a[4]
+          '6ти':  a[5]
+          '7ми':  a[6]
+          'доп.': a[7]
+          total:  a[8]
+        }
+    $scope.sbarChart.data   = $scope.freqs
+    $scope.sbarChart.labels = 'number'
+    $scope.sbarChart.categories = [
+      '1ви', '2ри', '3ти', '4ти', '5ти', '6ти', '7ми', 'доп.'
+    ]
 
 .directive 'barChart', () ->
   {
@@ -367,11 +390,17 @@ angular.module 'app', ['ionic']
 
       y = d3.scale.linear().rangeRound [scope.sbarChart.height, 0]
       yAxis = d3.svg.axis().scale(y)
-                 .tickFormat (d) -> Math.round(d/10000)/100 + " M"
+                 .tickFormat((d) ->
+                    if d > 100000.0
+                      Math.round(d/10000)/100 + " M"
+                    else
+                      scope.thou_sep d
+                   )
                  .orient 'left'
 
       x = d3.scale.ordinal().rangeRoundBands [0, scope.sbarChart.width], 0.1
       xAxis = d3.svg.axis().scale(x).orient 'bottom'
+                .ticks 17
 
       x.domain stacked[0].map (d) -> d.x
       svg.append 'g'
@@ -385,13 +414,9 @@ angular.module 'app', ['ionic']
          .transition().duration 1000
          .call yAxis
          .selectAll('line')
-         .style("stroke-dasharray", ("3, 3"))
+         .style "stroke-dasharray", "3, 3"
 
-      # svg.append 'g'
-      #    .attr 'class', 'grid'
-      #    .call xa.tickSize(-scope.sbarChart.width, 0, 0).tickFormat ''
-
-      color = d3.scale.category20c()
+      color = d3.scale.category20()
       
       svg.append 'text'
          .attr 'x', x(stacked[0][Math.floor stacked[0].length/2].x)
@@ -425,11 +450,11 @@ angular.module 'app', ['ionic']
               .style 'opacity', 1
 
            t = """
-            <p style='text-align: center;'>
-              <b>#{ d.cat }</b><br />
-              <hr />
-              #{ scope.thou_sep(d.y) }
-            </p>
+              <p style='text-align: center;'>
+                <b>#{ d.cat }</b><br />
+                <hr />
+                #{ scope.thou_sep(d.y) }
+              </p>
            """
            tooltip.html ''
            tooltip.transition().duration 1000

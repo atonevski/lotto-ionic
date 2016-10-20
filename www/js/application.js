@@ -265,6 +265,11 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
   };
 }).controller('Stats', function($scope, $http, $ionicLoading) {
   var $buildLottoFreqs, query;
+  $scope.hideChart = true;
+  $scope.sbarChart = {};
+  $scope.sbarChart.title = 'Bar chart title';
+  $scope.sbarChart.width = $scope.width;
+  $scope.sbarChart.height = $scope.height;
   query = "SELECT A, B, P, Q, R, S, T, U, V, W, X\nORDER BY B";
   $ionicLoading.show();
   $http.get($scope.qurl(query)).success(function(data, status) {
@@ -314,7 +319,23 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
         return t + e;
       }));
     }
-    return $scope.freqs = arr.slice(1);
+    $scope.freqs = arr.slice(1).map(function(a, i) {
+      return {
+        number: i + 1,
+        '1ви': a[0],
+        '2ри': a[1],
+        '3ти': a[2],
+        '4ти': a[3],
+        '5ти': a[4],
+        '6ти': a[5],
+        '7ми': a[6],
+        'доп.': a[7],
+        total: a[8]
+      };
+    });
+    $scope.sbarChart.data = $scope.freqs;
+    $scope.sbarChart.labels = 'number';
+    return $scope.sbarChart.categories = ['1ви', '2ри', '3ти', '4ти', '5ти', '6ти', '7ми', 'доп.'];
   };
 }).directive('barChart', function() {
   return {
@@ -403,10 +424,14 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
       stacked = d3.layout.stack()(remapped);
       y = d3.scale.linear().rangeRound([scope.sbarChart.height, 0]);
       yAxis = d3.svg.axis().scale(y).tickFormat(function(d) {
-        return Math.round(d / 10000) / 100 + " M";
+        if (d > 100000.0) {
+          return Math.round(d / 10000) / 100 + " M";
+        } else {
+          return scope.thou_sep(d);
+        }
       }).orient('left');
       x = d3.scale.ordinal().rangeRoundBands([0, scope.sbarChart.width], 0.1);
-      xAxis = d3.svg.axis().scale(x).orient('bottom');
+      xAxis = d3.svg.axis().scale(x).orient('bottom').ticks(17);
       x.domain(stacked[0].map(function(d) {
         return d.x;
       }));
@@ -417,7 +442,7 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
         })
       ]);
       xa = svg.append('g').attr('class', 'y axis').transition().duration(1000).call(yAxis).selectAll('line').style("stroke-dasharray", "3, 3");
-      color = d3.scale.category20c();
+      color = d3.scale.category20();
       svg.append('text').attr('x', x(stacked[0][Math.floor(stacked[0].length / 2)].x)).attr('y', y(20 + d3.max(stacked.slice(-1)[0], (function(d) {
         return d.y0 + d.y;
       })))).attr('dy', '-0.35em').attr('text-anchor', 'middle').attr('class', 'bar-chart-title').text(scope.sbarChart.title);

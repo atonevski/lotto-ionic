@@ -1,5 +1,13 @@
 <ion-view title='Статистика на извлечени броеви'>
  <ion-content>
+  <div class='row' ng-click="hideChart = !hideChart">
+    <div class='col text-left'>
+      <a style='font-size: 24px'><i class='icon ion-stats-bars'></i></a>
+    </div>
+  </div>
+  <div id='bar-chart-id' class='row' stacked-bar-chart ng-if='!hideChart'
+        width='240' height='200' title='Зачестеност со родослед на извлекување'>
+  </div>
   <div class='list'>
     <div class='item item-divider divider-stats'>
       <div class='row row-no-padding'>
@@ -18,16 +26,16 @@
     <div class='item item-stats' ng-repeat='f in freqs'
          ng-class="{ even: $index % 2 == 0, odd: $index % 2 == 1 }">
       <div class='row row-no-padding'>
-        <div class='col'>{{ $index + 1 }}</div>
-        <div class='col'>{{ f[0] }}</div>
-        <div class='col'>{{ f[1] }}</div>
-        <div class='col'>{{ f[2] }}</div>
-        <div class='col'>{{ f[3] }}</div>
-        <div class='col'>{{ f[4] }}</div>
-        <div class='col'>{{ f[5] }}</div>
-        <div class='col'>{{ f[6] }}</div>
-        <div class='col'>{{ f[7] }}</div>
-        <div class='col'><strong>{{ f[8] }}</strong></div>
+        <div class='col'>{{ f.number }}</div>
+        <div class='col'>{{ f['1ви'] }}</div>
+        <div class='col'>{{ f['2ри'] }}</div>
+        <div class='col'>{{ f['3ти'] }}</div>
+        <div class='col'>{{ f['4ти'] }}</div>
+        <div class='col'>{{ f['5ти'] }}</div>
+        <div class='col'>{{ f['6ти'] }}</div>
+        <div class='col'>{{ f['7ми'] }}</div>
+        <div class='col'>{{ f['доп.'] }}</div>
+        <div class='col'><strong>{{ f.total }}</strong></div>
       </div>
     </div>
   </div>
