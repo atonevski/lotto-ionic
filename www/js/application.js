@@ -15,8 +15,15 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
     controller: 'Weekly'
   }).state('stats', {
     url: '/stats',
-    templateUrl: 'views/stats/freqs.html',
-    controller: 'Stats'
+    templateUrl: 'views/stats/home.html'
+  }).state('lotto-stats', {
+    url: '/stats/lotto',
+    templateUrl: 'views/stats/lfreqs.html',
+    controller: 'LottoStats'
+  }).state('joker-stats', {
+    url: '/stats/joker',
+    templateUrl: 'views/stats/jfreqs.html',
+    controller: 'JokerStats'
   }).state('about', {
     url: '/about',
     templateUrl: 'views/about/about.html'
@@ -263,14 +270,14 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
       });
     });
   };
-}).controller('Stats', function($scope, $http, $ionicLoading) {
+}).controller('LottoStats', function($scope, $http, $ionicLoading) {
   var $buildLottoFreqs, query;
   $scope.hideChart = true;
   $scope.sbarChart = {};
   $scope.sbarChart.title = 'Bar chart title';
   $scope.sbarChart.width = $scope.width;
   $scope.sbarChart.height = $scope.height;
-  query = "SELECT A, B, P, Q, R, S, T, U, V, W, X\nORDER BY B";
+  query = "SELECT A, B, P, Q, R, S, T, U, V, W\nORDER BY B";
   $ionicLoading.show();
   $http.get($scope.qurl(query)).success(function(data, status) {
     var res;
@@ -281,8 +288,7 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
       return {
         draw: a[0],
         date: a[1],
-        lotto: [a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9]],
-        joker: a[10].split('')
+        lotto: [a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9]]
       };
     });
     $buildLottoFreqs();
@@ -294,7 +300,7 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
     });
   });
   return $buildLottoFreqs = function() {
-    var a, arr, i, j, k, len, n, ref, ref1, results, row;
+    var a, arr, i, j, k, l, len, n, ref, ref1, results, results1, row;
     arr = (function() {
       results = [];
       for (j = 0; j <= 34; j++){ results.push(j); }
@@ -335,7 +341,81 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
     });
     $scope.sbarChart.data = $scope.freqs;
     $scope.sbarChart.labels = 'number';
+    $scope.sbarChart.labVals = (function() {
+      results1 = [];
+      for (l = 1; l <= 34; l++){ results1.push(l); }
+      return results1;
+    }).apply(this).filter(function(v) {
+      return v % 2 !== 0;
+    });
     return $scope.sbarChart.categories = ['1ви', '2ри', '3ти', '4ти', '5ти', '6ти', '7ми', 'доп.'];
+  };
+}).controller('JokerStats', function($scope, $http, $ionicLoading) {
+  var $buildJokerFreqs, query;
+  $scope.hideChart = true;
+  $scope.sbarChart = {};
+  $scope.sbarChart.title = 'Bar chart title';
+  $scope.sbarChart.width = $scope.width;
+  $scope.sbarChart.height = $scope.height;
+  query = "SELECT A, B, X\nORDER BY B";
+  $ionicLoading.show();
+  $http.get($scope.qurl(query)).success(function(data, status) {
+    var res;
+    res = $scope.to_json(data);
+    $scope.winColumns = res.table.rows.map(function(r) {
+      var a;
+      a = $scope.eval_row(r);
+      return {
+        draw: a[0],
+        date: a[1],
+        joker: a[2].split('')
+      };
+    });
+    $buildJokerFreqs();
+    return $ionicLoading.hide();
+  }).error(function(err) {
+    return $ionicLoading.show({
+      template: "Не може да се вчитаат добитните комбинации. Пробај подоцна.",
+      duration: 3000
+    });
+  });
+  return $buildJokerFreqs = function() {
+    var a, arr, i, j, len, n, ref, ref1, row;
+    arr = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(function(e) {
+      return [0, 1, 2, 3, 4, 5].map(function() {
+        return 0;
+      });
+    });
+    ref = $scope.winColumns;
+    for (j = 0, len = ref.length; j < len; j++) {
+      row = ref[j];
+      ref1 = row.joker;
+      for (i in ref1) {
+        n = ref1[i];
+        arr[n][i]++;
+      }
+    }
+    for (i in arr) {
+      a = arr[i];
+      arr[i].push(a.reduce(function(t, e) {
+        return t + e;
+      }));
+    }
+    $scope.freqs = arr.map(function(a, i) {
+      return {
+        number: i,
+        '1ви': a[0],
+        '2ри': a[1],
+        '3ти': a[2],
+        '4ти': a[3],
+        '5ти': a[4],
+        '6ти': a[5],
+        total: a[6]
+      };
+    });
+    $scope.sbarChart.data = $scope.freqs;
+    $scope.sbarChart.labels = 'number';
+    return $scope.sbarChart.categories = ['1ви', '2ри', '3ти', '4ти', '5ти', '6ти'];
   };
 }).directive('barChart', function() {
   return {
@@ -393,7 +473,7 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
     restrict: 'A',
     replace: false,
     link: function(scope, el, attrs) {
-      var color, g, lab, legend, margin, r, remapped, stacked, svg, tooltip, x, xAxis, xa, y, yAxis;
+      var color, g, lab, legend, margin, r, remapped, stacked, svg, tooltip, x, xAxis, y, yAxis;
       if (attrs.title != null) {
         scope.sbarChart.title = attrs.title;
       }
@@ -404,9 +484,9 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
         scope.sbarChart.height = parseInt(attrs.height);
       }
       margin = {
-        top: 15,
+        top: 35,
         right: 120,
-        bottom: 40,
+        bottom: 30,
         left: 40
       };
       tooltip = d3.select(el[0]).append('div').attr('class', 'tooltip').style('opacity', 0);
@@ -430,8 +510,11 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
           return scope.thou_sep(d);
         }
       }).orient('left');
-      x = d3.scale.ordinal().rangeRoundBands([0, scope.sbarChart.width], 0.1);
-      xAxis = d3.svg.axis().scale(x).orient('bottom').ticks(17);
+      x = d3.scale.ordinal().rangeRoundBands([0, scope.sbarChart.width], 0.3, 0.2);
+      xAxis = d3.svg.axis().scale(x).orient('bottom');
+      if (scope.sbarChart.labVals != null) {
+        xAxis.tickValues(scope.sbarChart.labVals);
+      }
       x.domain(stacked[0].map(function(d) {
         return d.x;
       }));
@@ -441,7 +524,7 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
           return d.y0 + d.y;
         })
       ]);
-      xa = svg.append('g').attr('class', 'y axis').transition().duration(1000).call(yAxis).selectAll('line').style("stroke-dasharray", "3, 3");
+      svg.append('g').attr('class', 'y axis').transition().duration(1000).call(yAxis).selectAll('line').style("stroke-dasharray", "3, 3");
       color = d3.scale.category20();
       svg.append('text').attr('x', x(stacked[0][Math.floor(stacked[0].length / 2)].x)).attr('y', y(20 + d3.max(stacked.slice(-1)[0], (function(d) {
         return d.y0 + d.y;
@@ -463,14 +546,13 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
         return y(d.y0) - y(d.y + d.y0);
       }).attr('width', x.rangeBand()).on('click', function(d, i) {
         var t;
-        d3.select("\#" + d.cat + "-" + d.x).style('opacity', 0.85).transition().duration(1500).ease('exp').style('opacity', 1);
-        t = "<p style='text-align: center;'>\n  <b>" + d.cat + "</b><br />\n  <hr />\n  " + (scope.thou_sep(d.y)) + "\n</p>";
+        t = "<p style='text-align: center;'>\n  <b>" + d.cat + "/" + d.x + "</b>\n  <hr /></p>\n<p style='text-align: center'>  \n  " + (scope.thou_sep(d.y)) + "\n</p>";
         tooltip.html('');
         tooltip.transition().duration(1000).style('opacity', 0.75);
-        tooltip.html(t).style('left', d3.event.pageX + 'px').style('top', (d3.event.pageY - 60) + 'px').style('opacity', 1);
+        tooltip.html(t).style('left', (d3.event.pageX + 10) + 'px').style('top', (d3.event.pageY - 50) + 'px').style('opacity', 1);
         return tooltip.transition().duration(3000).style('opacity', 0);
       }).append('title').html(function(d) {
-        return "<strong>" + d.cat + "</strong>: " + (scope.thou_sep(d.y));
+        return "<strong>" + d.cat + "/" + d.x + "</strong>: " + (scope.thou_sep(d.y));
       });
       legend = svg.append('g').attr('class', 'legend');
       legend.selectAll('.legend-rect').data(scope.sbarChart.categories).enter().append('rect').attr('class', '.legend-rect').attr('width', 16).attr('height', 16).attr('x', scope.sbarChart.width + 2).attr('y', function(d, i) {
@@ -492,7 +574,7 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
     restrict: 'A',
     replace: false,
     link: function(scope, el, attrs) {
-      var d, i, j, legend, len, line, margin, ref, s, svg, tooltip, w, win, ww, x, xAxis, y, yAxis;
+      var d, i, j, legend, len, line, margin, ref, s, svg, tooltip, w, win, ww, x, xAxis, y, yAxis, ymax;
       if (attrs.title != null) {
         scope.lineChart.title = attrs.title;
       }
@@ -503,15 +585,20 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
         scope.lineChart.height = parseInt(attrs.height);
       }
       margin = {
-        top: 15,
+        top: 35,
         right: 120,
-        bottom: 40,
+        bottom: 30,
         left: 40
       };
       tooltip = d3.select(el[0]).append('div').attr('class', 'tooltip').style('opacity', 0);
       svg = d3.select(el[0]).append('svg').attr('width', scope.lineChart.width + margin.left + margin.right).attr('height', scope.lineChart.height + margin.top + margin.bottom).append('g').attr('transform', "translate(" + margin.left + ", " + margin.top + ")");
       y = d3.scale.linear().rangeRound([scope.lineChart.height, 0]);
       yAxis = d3.svg.axis().scale(y).orient('left');
+      ymax = d3.max(scope.series.map(function(s) {
+        return d3.max(s.data.map(function(d) {
+          return d.y;
+        }));
+      }));
       y.domain([
         0, d3.max(scope.series.map(function(s) {
           return d3.max(s.data.map(function(d) {
@@ -530,6 +617,7 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
         }))
       ]);
       svg.append('g').attr('class', 'x axis').attr('transform', "translate(0, " + scope.lineChart.height + ")").call(xAxis);
+      svg.append('text').attr('x', scope.lineChart.width / 2).attr('y', y(20 + ymax)).attr('dy', '-0.35em').attr('text-anchor', 'middle').attr('class', 'bar-chart-title').text(scope.lineChart.title);
       line = d3.svg.line().interpolate("basis").x(function(d) {
         return x(d.x);
       }).y(function(d) {

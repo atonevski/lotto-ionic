@@ -25,8 +25,17 @@ angular.module 'app', ['ionic']
     }
     .state 'stats', {
       url:          '/stats'
-      templateUrl:  'views/stats/freqs.html'
-      controller:   'Stats'
+      templateUrl:  'views/stats/home.html'
+    }
+    .state 'lotto-stats', {
+      url:          '/stats/lotto'
+      templateUrl:  'views/stats/lfreqs.html'
+      controller:   'LottoStats'
+    }
+    .state 'joker-stats', {
+      url:          '/stats/joker'
+      templateUrl:  'views/stats/jfreqs.html'
+      controller:   'JokerStats'
     }
     .state 'about', {
       url:          '/about'
@@ -240,7 +249,7 @@ angular.module 'app', ['ionic']
           duration: 3000
         })
 
-.controller 'Stats', ($scope, $http, $ionicLoading) ->
+.controller 'LottoStats', ($scope, $http, $ionicLoading) ->
   $scope.hideChart = true
   $scope.sbarChart = { }
   $scope.sbarChart.title  = 'Bar chart title'
@@ -248,7 +257,7 @@ angular.module 'app', ['ionic']
   $scope.sbarChart.height = $scope.height
 
   # A: draw #, B: date, P..W: winning column lotto, X: winning column joker
-  query = """SELECT A, B, P, Q, R, S, T, U, V, W, X
+  query = """SELECT A, B, P, Q, R, S, T, U, V, W
              ORDER BY B"""
   $ionicLoading.show()
   $http.get $scope.qurl(query)
@@ -260,7 +269,6 @@ angular.module 'app', ['ionic']
           draw:   a[0]
           date:   a[1]
           lotto:  [ a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9] ]
-          joker:  a[10].split ''
         }
       $buildLottoFreqs()
       $ionicLoading.hide()
@@ -294,10 +302,65 @@ angular.module 'app', ['ionic']
         }
     $scope.sbarChart.data   = $scope.freqs
     $scope.sbarChart.labels = 'number'
+    $scope.sbarChart.labVals = [1..34].filter (v) -> v%2 isnt 0
     $scope.sbarChart.categories = [
       '1ви', '2ри', '3ти', '4ти', '5ти', '6ти', '7ми', 'доп.'
     ]
 
+.controller 'JokerStats', ($scope, $http, $ionicLoading) ->
+  $scope.hideChart = true
+  $scope.sbarChart = { }
+  $scope.sbarChart.title  = 'Bar chart title'
+  $scope.sbarChart.width  = $scope.width
+  $scope.sbarChart.height = $scope.height
+
+  # A: draw #, B: date, P..W: winning column lotto, X: winning column joker
+  query = """SELECT A, B, X
+             ORDER BY B"""
+  $ionicLoading.show()
+  $http.get $scope.qurl(query)
+    .success (data, status) ->
+      res = $scope.to_json data
+      $scope.winColumns = res.table.rows.map (r) ->
+        a = $scope.eval_row r
+        {
+          draw:   a[0]
+          date:   a[1]
+          joker:  a[2].split ''
+        }
+      $buildJokerFreqs()
+      $ionicLoading.hide()
+    .error (err) ->
+      $ionicLoading.show({
+        template: "Не може да се вчитаат добитните комбинации. Пробај подоцна."
+        duration: 3000
+      })
+
+  # change this method to have a parameter 'all', 'stresa', 'venus'
+  # and to produce different tables
+  $buildJokerFreqs = () ->
+    arr = [0..9].map (e) -> ([0..5].map () -> 0)
+    for row in $scope.winColumns
+      for i, n of row.joker
+        arr[n][i]++
+    for i, a of arr
+      arr[i].push a.reduce (t, e) -> t + e
+    $scope.freqs = arr.map (a, i) ->
+        {
+          number: i
+          '1ви':  a[0]
+          '2ри':  a[1]
+          '3ти':  a[2]
+          '4ти':  a[3]
+          '5ти':  a[4]
+          '6ти':  a[5]
+          total:  a[6]
+        }
+    $scope.sbarChart.data   = $scope.freqs
+    $scope.sbarChart.labels = 'number'
+    # $scope.sbarChart.labVals = [1..34].filter (v) -> v%2 isnt 0
+    $scope.sbarChart.categories = [
+      '1ви', '2ри', '3ти', '4ти', '5ти', '6ти' ]
 .directive 'barChart', () ->
   {
     restrict: 'A'
@@ -367,7 +430,7 @@ angular.module 'app', ['ionic']
       scope.sbarChart.title   = attrs.title             if attrs.title?
       scope.sbarChart.width   = parseInt(attrs.width)   if attrs.width?
       scope.sbarChart.height  = parseInt(attrs.height)  if attrs.height?
-      margin = { top: 15, right: 120, bottom: 40, left: 40 }
+      margin = { top: 35, right: 120, bottom: 30, left: 40 }
 
       tooltip = d3.select el[0]
                   .append 'div'
@@ -398,9 +461,9 @@ angular.module 'app', ['ionic']
                    )
                  .orient 'left'
 
-      x = d3.scale.ordinal().rangeRoundBands [0, scope.sbarChart.width], 0.1
+      x = d3.scale.ordinal().rangeRoundBands [0, scope.sbarChart.width], 0.3, 0.2
       xAxis = d3.svg.axis().scale(x).orient 'bottom'
-                .ticks 17
+      xAxis.tickValues scope.sbarChart.labVals if scope.sbarChart.labVals?
 
       x.domain stacked[0].map (d) -> d.x
       svg.append 'g'
@@ -409,7 +472,7 @@ angular.module 'app', ['ionic']
          .call xAxis
 
       y.domain [0, d3.max(stacked[-1..][0], (d) -> return d.y0 + d.y)]
-      xa = svg.append 'g'
+      svg.append 'g'
          .attr 'class', 'y axis'
          .transition().duration 1000
          .call yAxis
@@ -444,15 +507,16 @@ angular.module 'app', ['ionic']
          .attr 'height', (d) -> y(d.y0) - y(d.y + d.y0)
          .attr 'width', x.rangeBand()
          .on('click', (d, i) ->
-           d3.select "\##{ d.cat }-#{ d.x }"
-              .style 'opacity', 0.85
-              .transition().duration(1500).ease 'exp'
-              .style 'opacity', 1
+           # d3.select "\##{ d.cat }-#{ d.x }"
+           #    .style 'opacity', 0.85
+           #    .transition().duration(1500).ease 'exp'
+           #    .style 'opacity', 1
 
            t = """
               <p style='text-align: center;'>
-                <b>#{ d.cat }</b><br />
-                <hr />
+                <b>#{ d.cat }/#{ d.x }</b>
+                <hr /></p>
+              <p style='text-align: center'>  
                 #{ scope.thou_sep(d.y) }
               </p>
            """
@@ -460,14 +524,14 @@ angular.module 'app', ['ionic']
            tooltip.transition().duration 1000
                   .style 'opacity', 0.75
            tooltip.html t
-                  .style 'left', (d3.event.pageX) + 'px'
-                  .style 'top', (d3.event.pageY-60) + 'px'
+                  .style 'left', (d3.event.pageX + 10) + 'px'
+                  .style 'top', (d3.event.pageY - 50) + 'px'
                   .style 'opacity', 1
            tooltip.transition().duration 3000
                   .style 'opacity', 0
            )
          .append 'title'
-         .html (d) -> "<strong>#{ d.cat }</strong>: #{ scope.thou_sep(d.y) }"
+         .html (d) -> "<strong>#{ d.cat }/#{ d.x }</strong>: #{ scope.thou_sep(d.y) }"
 
       legend = svg.append('g').attr 'class', 'legend'
       legend.selectAll '.legend-rect'
@@ -501,7 +565,7 @@ angular.module 'app', ['ionic']
       scope.lineChart.title   = attrs.title             if attrs.title?
       scope.lineChart.width   = parseInt(attrs.width)   if attrs.width?
       scope.lineChart.height  = parseInt(attrs.height)  if attrs.height?
-      margin = { top: 15, right: 120, bottom: 40, left: 40 }
+      margin = { top: 35, right: 120, bottom: 30, left: 40 }
 
       tooltip = d3.select el[0]
                   .append 'div'
@@ -519,6 +583,7 @@ angular.module 'app', ['ionic']
       yAxis = d3.svg.axis()
                 .scale(y)
                 .orient 'left'
+      ymax = d3.max scope.series.map (s) -> d3.max(s.data.map (d) -> d.y)
       y.domain [0, d3.max scope.series.map (s) -> d3.max(s.data.map (d) -> d.y) ]
       svg.append 'g'
          .attr 'class', 'y axis'
@@ -539,6 +604,14 @@ angular.module 'app', ['ionic']
          .attr 'class', 'x axis'
          .attr 'transform', "translate(0, #{scope.lineChart.height})"
          .call xAxis
+      
+      svg.append 'text'
+         .attr 'x', scope.lineChart.width/2
+         .attr 'y', y(20 + ymax)
+         .attr 'dy', '-0.35em'
+         .attr 'text-anchor', 'middle'
+         .attr 'class', 'bar-chart-title'
+         .text scope.lineChart.title
 
       line = d3.svg.line()
                .interpolate("basis")
