@@ -37,7 +37,7 @@
   shape-rendering: crispEdges;
 }
 
-.bar-chart-title {
+.bar-chart-title, .line-chart-title {
   font-size: 12px;
   font-family: 'Open Sans';
   font-weight: bold;

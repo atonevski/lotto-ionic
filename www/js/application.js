@@ -24,6 +24,10 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
     url: '/stats/joker',
     templateUrl: 'views/stats/jfreqs.html',
     controller: 'JokerStats'
+  }).state('winners-stats', {
+    url: '/stats/winners',
+    templateUrl: 'views/stats/winners.html',
+    controller: 'WinnersStats'
   }).state('about', {
     url: '/about',
     templateUrl: 'views/about/about.html'
@@ -417,6 +421,86 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
     $scope.sbarChart.labels = 'number';
     return $scope.sbarChart.categories = ['1ви', '2ри', '3ти', '4ти', '5ти', '6ти'];
   };
+}).controller('WinnersStats', function($scope, $http, $ionicLoading) {
+  var query, qx6, qx6p, qx7;
+  $ionicLoading.show();
+  qx7 = "SELECT\n  YEAR(B), COUNT(D)\nWHERE D > 0\nGROUP BY YEAR(B)\nORDER BY YEAR(B)";
+  $http.get($scope.qurl(qx7)).success(function(data, status) {
+    var res;
+    res = $scope.to_json(data);
+    $scope.winX7 = {};
+    return res.table.rows.forEach(function(r) {
+      var a;
+      a = $scope.eval_row(r);
+      return $scope.winX7[a[0]] = a[1];
+    });
+  }).error(function(err) {
+    return $ionicLoading.show({
+      template: "Не може да се вчитаат добитници x7. Пробај подоцна.",
+      duration: 3000
+    });
+  });
+  qx6p = "SELECT\n  YEAR(B), COUNT(E)\nWHERE E > 0\nGROUP BY YEAR(B)\nORDER BY YEAR(B)";
+  $http.get($scope.qurl(qx6p)).success(function(data, status) {
+    var res;
+    res = $scope.to_json(data);
+    $scope.winX6p = {};
+    res.table.rows.forEach(function(r) {
+      var a;
+      a = $scope.eval_row(r);
+      return $scope.winX6p[a[0]] = a[1];
+    });
+    return console.log($scope.winX6p);
+  }).error(function(err) {
+    return $ionicLoading.show({
+      template: "Не може да се вчитаат добитници x6+1. Пробај подоцна.",
+      duration: 3000
+    });
+  });
+  qx6 = "SELECT\n  YEAR(B), COUNT(F)\nWHERE F > 0\nGROUP BY YEAR(B)\nORDER BY YEAR(B)";
+  $http.get($scope.qurl(qx6)).success(function(data, status) {
+    var res;
+    res = $scope.to_json(data);
+    $scope.winX6 = {};
+    res.table.rows.forEach(function(r) {
+      var a;
+      a = $scope.eval_row(r);
+      return $scope.winX6[a[0]] = a[1];
+    });
+    return console.log($scope.winX6);
+  }).error(function(err) {
+    return $ionicLoading.show({
+      template: "Не може да се вчитаат добитници x6. Пробај подоцна.",
+      duration: 3000
+    });
+  });
+  query = "SELECT YEAR(B), COUNT(A), MIN(C), MAX(C), AVG(C), SUM(D),\n       SUM(E), AVG(F), AVG(G), AVG(H)\nGROUP BY YEAR(B)\nORDER BY YEAR(B)";
+  return $http.get($scope.qurl(query)).success(function(data, status) {
+    var res;
+    res = $scope.to_json(data);
+    $scope.winners = res.table.rows.map(function(r) {
+      var a;
+      a = $scope.eval_row(r);
+      return {
+        year: a[0],
+        draws: a[1],
+        min: a[2],
+        max: a[3],
+        avg: Math.round(a[4]),
+        x7: a[5],
+        'x6+1': a[6],
+        x6: Math.round(a[7]),
+        x5: Math.round(a[8]),
+        x4: Math.round(a[9])
+      };
+    });
+    return $ionicLoading.hide();
+  }).error(function(err) {
+    return $ionicLoading.show({
+      template: "Не може да се вчита статистика на добитници. Пробај подоцна.",
+      duration: 3000
+    });
+  });
 }).directive('barChart', function() {
   return {
     restrict: 'A',
@@ -549,7 +633,7 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
         t = "<p style='text-align: center;'>\n  <b>" + d.cat + "/" + d.x + "</b>\n  <hr /></p>\n<p style='text-align: center'>  \n  " + (scope.thou_sep(d.y)) + "\n</p>";
         tooltip.html('');
         tooltip.transition().duration(1000).style('opacity', 0.75);
-        tooltip.html(t).style('left', (d3.event.pageX + 10) + 'px').style('top', (d3.event.pageY - 50) + 'px').style('opacity', 1);
+        tooltip.html(t).style('left', (d3.event.pageX + 10) + 'px').style('top', (d3.event.pageY - 75) + 'px').style('opacity', 1);
         return tooltip.transition().duration(3000).style('opacity', 0);
       }).append('title').html(function(d) {
         return "<strong>" + d.cat + "/" + d.x + "</strong>: " + (scope.thou_sep(d.y));
@@ -617,8 +701,8 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
         }))
       ]);
       svg.append('g').attr('class', 'x axis').attr('transform', "translate(0, " + scope.lineChart.height + ")").call(xAxis);
-      svg.append('text').attr('x', scope.lineChart.width / 2).attr('y', y(20 + ymax)).attr('dy', '-0.35em').attr('text-anchor', 'middle').attr('class', 'bar-chart-title').text(scope.lineChart.title);
-      line = d3.svg.line().interpolate("basis").x(function(d) {
+      svg.append('text').attr('x', scope.lineChart.width / 2).attr('y', y(20 + ymax)).attr('dy', '-0.35em').attr('text-anchor', 'middle').attr('class', 'line-chart-title').text(scope.lineChart.title);
+      line = d3.svg.line().interpolate("monotone").x(function(d) {
         return x(d.x);
       }).y(function(d) {
         return y(d.y);
@@ -643,7 +727,7 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
               draw: ww.draw
             }, ww
           ];
-          svg.append('path').datum(d).attr('id', "draw-" + ww.draw).attr('class', 'line').attr('stroke', d3.scale.category10().range()[i]).attr('stroke-dasharray', '3 1').on('click', function(d, i) {
+          svg.append('path').datum(d).attr('id', "draw-" + ww.draw).attr('class', 'line').attr('stroke', d3.scale.category10().range()[i]).attr('stroke-dasharray', '0.8 1.6').on('click', function(d, i) {
             var t;
             t = "<p style='text-align: center;'>\n  <b>коло: " + d[1].draw + "</b><br />\n</p>";
             tooltip.html(t);

@@ -37,6 +37,11 @@ angular.module 'app', ['ionic']
       templateUrl:  'views/stats/jfreqs.html'
       controller:   'JokerStats'
     }
+    .state 'winners-stats', {
+      url:          '/stats/winners'
+      templateUrl:  'views/stats/winners.html'
+      controller:   'WinnersStats'
+    }
     .state 'about', {
       url:          '/about'
       templateUrl:  'views/about/about.html'
@@ -361,6 +366,104 @@ angular.module 'app', ['ionic']
     # $scope.sbarChart.labVals = [1..34].filter (v) -> v%2 isnt 0
     $scope.sbarChart.categories = [
       '1ви', '2ри', '3ти', '4ти', '5ти', '6ти' ]
+
+.controller 'WinnersStats', ($scope, $http, $ionicLoading) ->
+  $ionicLoading.show()
+  
+  # count x7
+  qx7 = """
+      SELECT
+        YEAR(B), COUNT(D)
+      WHERE D > 0
+      GROUP BY YEAR(B)
+      ORDER BY YEAR(B)
+    """
+  $http.get $scope.qurl(qx7)
+    .success (data, status) ->
+      res = $scope.to_json data
+      $scope.winX7 = { }
+      res.table.rows.forEach (r) ->
+        a = $scope.eval_row r
+        $scope.winX7[a[0]] = a[1]
+    .error (err) ->
+      $ionicLoading.show({
+        template: "Не може да се вчитаат добитници x7. Пробај подоцна."
+        duration: 3000
+      })
+
+  # count x6p
+  qx6p= """
+      SELECT
+        YEAR(B), COUNT(E)
+      WHERE E > 0
+      GROUP BY YEAR(B)
+      ORDER BY YEAR(B)
+    """
+  $http.get $scope.qurl(qx6p)
+    .success (data, status) ->
+      res = $scope.to_json data
+      $scope.winX6p = { }
+      res.table.rows.forEach (r) ->
+        a = $scope.eval_row r
+        $scope.winX6p[a[0]] = a[1]
+      console.log $scope.winX6p
+    .error (err) ->
+      $ionicLoading.show({
+        template: "Не може да се вчитаат добитници x6+1. Пробај подоцна."
+        duration: 3000
+      })
+
+  # count x6
+  qx6 = """
+      SELECT
+        YEAR(B), COUNT(F)
+      WHERE F > 0
+      GROUP BY YEAR(B)
+      ORDER BY YEAR(B)
+    """
+  $http.get $scope.qurl(qx6)
+    .success (data, status) ->
+      res = $scope.to_json data
+      $scope.winX6 = { }
+      res.table.rows.forEach (r) ->
+        a = $scope.eval_row r
+        $scope.winX6[a[0]] = a[1]
+      console.log $scope.winX6
+    .error (err) ->
+      $ionicLoading.show({
+        template: "Не може да се вчитаат добитници x6. Пробај подоцна."
+        duration: 3000
+      })
+
+  # A: draw #, B: date, P..W: winning column lotto, X: winning column joker
+  query = """SELECT YEAR(B), COUNT(A), MIN(C), MAX(C), AVG(C), SUM(D),
+                    SUM(E), AVG(F), AVG(G), AVG(H)
+             GROUP BY YEAR(B)
+             ORDER BY YEAR(B)"""
+  $http.get $scope.qurl(query)
+    .success (data, status) ->
+      res = $scope.to_json data
+      $scope.winners = res.table.rows.map (r) ->
+        a = $scope.eval_row r
+        {
+          year:   a[0]
+          draws:  a[1]
+          min:    a[2]
+          max:    a[3]
+          avg:    Math.round a[4]
+          x7:     a[5]
+          'x6+1': a[6]
+          x6:     Math.round a[7]
+          x5:     Math.round a[8]
+          x4:     Math.round a[9]
+        }
+      $ionicLoading.hide()
+    .error (err) ->
+      $ionicLoading.show({
+        template: "Не може да се вчита статистика на добитници. Пробај подоцна."
+        duration: 3000
+      })
+
 .directive 'barChart', () ->
   {
     restrict: 'A'
@@ -525,7 +628,7 @@ angular.module 'app', ['ionic']
                   .style 'opacity', 0.75
            tooltip.html t
                   .style 'left', (d3.event.pageX + 10) + 'px'
-                  .style 'top', (d3.event.pageY - 50) + 'px'
+                  .style 'top', (d3.event.pageY - 75) + 'px'
                   .style 'opacity', 1
            tooltip.transition().duration 3000
                   .style 'opacity', 0
@@ -610,11 +713,11 @@ angular.module 'app', ['ionic']
          .attr 'y', y(20 + ymax)
          .attr 'dy', '-0.35em'
          .attr 'text-anchor', 'middle'
-         .attr 'class', 'bar-chart-title'
+         .attr 'class', 'line-chart-title'
          .text scope.lineChart.title
 
       line = d3.svg.line()
-               .interpolate("basis")
+               .interpolate("monotone")
                .x (d) -> x(d.x)
                .y (d) -> y(d.y)
 
@@ -625,7 +728,7 @@ angular.module 'app', ['ionic']
           .attr 'class', 'line'
           .attr 'stroke', d3.scale.category10().range()[i]
           .attr 'd', line
-        win[i] = s.data.filter (d) -> d.lx7 > 0
+        win[i] = s.data.filter (d) ->d.lx7 > 0
 
       for i, w of win
         for ww in w
@@ -636,7 +739,7 @@ angular.module 'app', ['ionic']
              .attr 'class', 'line'
              # .attr 'stroke-dasharray', "3, 3"
              .attr 'stroke', d3.scale.category10().range()[i]
-             .attr 'stroke-dasharray', '3 1'
+             .attr 'stroke-dasharray', '0.8 1.6'
              .on 'click', (d, i) ->
                 t = """
                   <p style='text-align: center;'>
