@@ -1,36 +1,28 @@
 <ion-view title=''>
   <ion-content>
-    <div class='list'>
+    <div class='list' id='stats-list'>
       <div class='item item-divider divider-stats'>
         <div class='row row-no-padding'>
-          <div class='col'>година</div>
-          <div class='col text-center'># изв.</div>
-          <div class='col text-right'>мин.</div>
-          <div class='col text-right'>макс.</div>
-          <div class='col text-right'>прос.</div>
-          <div class='col text-right'>x7</div>
-          <div class='col text-right'>x6+1</div>
-          <div class='col text-right'>x6</div>
-          <div class='col text-right'>x5</div>
-          <div class='col text-right'>x4</div>
+          <div class='col col-20'>година</div>
+          <div class='col col-15 text-center'>x7</div>
+          <div class='col col-20 text-center'>x6+1</div>
+          <div class='col col-15 text-center'>x6</div>
+          <div class='col col-15 text-center'>x5</div>
+          <div class='col col-15 text-right'>x4</div>
         </div>
       </div>
 
       <div class='item item-stats' ng-repeat='w in winners'
-          ng-class="{ even: $index % 2 == 0, odd: $index % 2 == 1 }">
+          ng-class="{ even: $index % 2 == 0, odd: $index % 2 == 1 }"
+          ng-click='showBubble($event, $index)'>
         <div class='row row-no-padding'>
-          <div class='col'><a href='#/weekly/{{ w.year }}'>
+          <div class='col col-20'><a href='#/weekly/{{ w.year }}'>
             <i class='icon ion-android-arrow-dropright'></i></a>{{ w.year }}</div>
-          <div class='col text-center'>{{ w.draws }}</div>
-          <div class='col text-right'>{{ thou_sep(w.min) }}</div>
-          <div class='col text-right'>{{ thou_sep(w.max) }}</div>
-          <div class='col text-right'>{{ thou_sep(w.avg) }}</div>
-
-          <div class='col text-right'>{{ w.x7 }}{{ winX7[w.year] && winX7[w.year] != w.x7 ? '/'+winX7[w.year] : '' }}</div>
-          <div class='col text-right'>{{ w['x6+1'] }}{{ winX6p[w.year] && winX6p[w.year] != w['x6+1'] ? '/'+winX6p[w.year] : '' }}</div>
-          <div class='col text-right'>{{ w.x6 }}{{ winX6[w.year] ? '(' + (winX6[w.year]*100.0/w.draws).toFixed(2) + '%)' : ''}}</div>
-          <div class='col text-right'>{{ thou_sep(w.x5) }}</div>
-          <div class='col text-right'>{{ thou_sep(w.x4) }}</div>
+          <div class='col col-15 text-center'>{{ w.x7 }}{{ winX7[w.year] && winX7[w.year] != w.x7 ? '/'+winX7[w.year] : '' }}</div>
+          <div class='col col-20 text-center'>{{ w['x6+1'] }}{{ winX6p[w.year] && winX6p[w.year] != w['x6+1'] ? '/'+winX6p[w.year] : '' }}</div>
+          <div class='col col-15 text-center'>{{ w.x6 }}<small>{{ winX6[w.year] ? ' (' + (winX6[w.year]*100.0/w.draws).toFixed(2) + '%)' : ''}}</small></div>
+          <div class='col col-15 text-center'>{{ thou_sep(w.x5) }}</div>
+          <div class='col col-15 text-right'>{{ thou_sep(w.x4) }}</div>
         </div>
       </div>
     </div>

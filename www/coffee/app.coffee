@@ -368,8 +368,40 @@ angular.module 'app', ['ionic']
       '1ви', '2ри', '3ти', '4ти', '5ти', '6ти' ]
 
 .controller 'WinnersStats', ($scope, $http, $ionicLoading) ->
-  $ionicLoading.show()
   
+  $scope.bubble = d3.select '#stats-list'
+                    .append 'div'
+                    .attr 'class', 'bubble bubble-left'
+                    .style 'opacity', 0
+
+  $scope.showBubble = (event, idx) ->
+    t = """
+      <dl class='dl-horizontal'>
+        <dt>Година:</dt>
+        <dd>#{ $scope.winners[idx].year }</dd>
+        <dt>Вкупно кола:</dt>
+        <dd>#{ $scope.winners[idx].draws }</dd>
+        <dt>Најмала уплата:</dt>
+        <dd>#{ $scope.thou_sep $scope.winners[idx].min }</dd>
+        <dt>Просечна уплата:</dt>
+        <dd>#{ $scope.thou_sep $scope.winners[idx].avg }</dd>
+        <dt>Најголема уплата:</dt>
+        <dd>#{ $scope.thou_sep $scope.winners[idx].max }</dd>
+      </dl>
+    """
+    
+    $scope.bubble.html ''
+    $scope.bubble.transition().duration 500
+          .style 'opacity', 0.75
+    $scope.bubble.html t
+          .style 'left', (event.pageX + 10) + 'px'
+          .style 'top', (event.pageY - 70) + 'px'
+          .style 'opacity', 1
+    $scope.bubble.transition().duration 4000
+          .style 'opacity', 0
+
+  # load data
+  $ionicLoading.show()
   # count x7
   qx7 = """
       SELECT
@@ -406,7 +438,6 @@ angular.module 'app', ['ionic']
       res.table.rows.forEach (r) ->
         a = $scope.eval_row r
         $scope.winX6p[a[0]] = a[1]
-      console.log $scope.winX6p
     .error (err) ->
       $ionicLoading.show({
         template: "Не може да се вчитаат добитници x6+1. Пробај подоцна."
@@ -428,7 +459,6 @@ angular.module 'app', ['ionic']
       res.table.rows.forEach (r) ->
         a = $scope.eval_row r
         $scope.winX6[a[0]] = a[1]
-      console.log $scope.winX6
     .error (err) ->
       $ionicLoading.show({
         template: "Не може да се вчитаат добитници x6. Пробај подоцна."

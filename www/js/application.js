@@ -423,6 +423,15 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
   };
 }).controller('WinnersStats', function($scope, $http, $ionicLoading) {
   var query, qx6, qx6p, qx7;
+  $scope.bubble = d3.select('#stats-list').append('div').attr('class', 'bubble bubble-left').style('opacity', 0);
+  $scope.showBubble = function(event, idx) {
+    var t;
+    t = "<dl class='dl-horizontal'>\n  <dt>Година:</dt>\n  <dd>" + $scope.winners[idx].year + "</dd>\n  <dt>Вкупно кола:</dt>\n  <dd>" + $scope.winners[idx].draws + "</dd>\n  <dt>Најмала уплата:</dt>\n  <dd>" + ($scope.thou_sep($scope.winners[idx].min)) + "</dd>\n  <dt>Просечна уплата:</dt>\n  <dd>" + ($scope.thou_sep($scope.winners[idx].avg)) + "</dd>\n  <dt>Најголема уплата:</dt>\n  <dd>" + ($scope.thou_sep($scope.winners[idx].max)) + "</dd>\n</dl>";
+    $scope.bubble.html('');
+    $scope.bubble.transition().duration(500).style('opacity', 0.75);
+    $scope.bubble.html(t).style('left', (event.pageX + 10) + 'px').style('top', (event.pageY - 70) + 'px').style('opacity', 1);
+    return $scope.bubble.transition().duration(4000).style('opacity', 0);
+  };
   $ionicLoading.show();
   qx7 = "SELECT\n  YEAR(B), COUNT(D)\nWHERE D > 0\nGROUP BY YEAR(B)\nORDER BY YEAR(B)";
   $http.get($scope.qurl(qx7)).success(function(data, status) {
@@ -445,12 +454,11 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
     var res;
     res = $scope.to_json(data);
     $scope.winX6p = {};
-    res.table.rows.forEach(function(r) {
+    return res.table.rows.forEach(function(r) {
       var a;
       a = $scope.eval_row(r);
       return $scope.winX6p[a[0]] = a[1];
     });
-    return console.log($scope.winX6p);
   }).error(function(err) {
     return $ionicLoading.show({
       template: "Не може да се вчитаат добитници x6+1. Пробај подоцна.",
@@ -462,12 +470,11 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
     var res;
     res = $scope.to_json(data);
     $scope.winX6 = {};
-    res.table.rows.forEach(function(r) {
+    return res.table.rows.forEach(function(r) {
       var a;
       a = $scope.eval_row(r);
       return $scope.winX6[a[0]] = a[1];
     });
-    return console.log($scope.winX6);
   }).error(function(err) {
     return $ionicLoading.show({
       template: "Не може да се вчитаат добитници x6. Пробај подоцна.",
