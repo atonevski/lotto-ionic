@@ -86,6 +86,8 @@ div.tooltip {
     position: absolute;
     vertical-align: top;
     z-index: 100;
+    font-family: 'Open Sans';
+    font-size: 12px;
 }
 
 .bubble::before {
@@ -102,6 +104,8 @@ div.tooltip {
         -webkit-transform: rotate( 29deg ) skew( -35deg );
     width:  20px;
     z-index: 100;
+    font-family: 'Open Sans';
+    font-size: 12px;
 }
 
 .bubble-left {

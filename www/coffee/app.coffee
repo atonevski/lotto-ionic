@@ -138,7 +138,44 @@ angular.module 'app', ['ionic']
         duration: 3000
       })
           
-.controller 'Weekly', ($scope, $http, $stateParams, $ionicLoading) ->
+.controller 'Weekly', ($scope, $http, $stateParams, $ionicLoading, $ionicPosition) ->
+  $scope.bubble = d3.select '#weekly-list'
+                    .append 'div'
+                    .attr 'class', 'bubble bubble-left'
+                    .style 'opacity', 0
+
+  $scope.showBubble = (event, idx) ->
+    # console.log event, event.x, event.y, event.offsetX, event.offsetY
+    console.log $ionicPosition.offset (d3.select "\#draw-#{$scope.sales[idx].draw}")[0]
+    offset = $ionicPosition.offset (d3.select "\#draw-#{$scope.sales[idx].draw}")[0]
+    pos  = $ionicPosition.position (d3.select "\#draw-#{$scope.sales[idx].draw}")[0]
+    t = """
+      <dl class='dl-horizontal'>
+        <dt>Коло:</dt>
+        <dd>#{ $scope.sales[idx].draw }</dd>
+        <dt>Дата:</dt>
+        <dd>#{ $scope.sales[idx].date.toISOString()[0..9]
+                     .split('-').reverse().join('.') }</dd>
+        <dt>Уплата лото:</dt>
+        <dd>#{ $scope.thou_sep $scope.sales[idx].lotto }</dd>
+        <dt>Уплата џокер:</dt>
+        <dd>#{ $scope.thou_sep $scope.sales[idx].joker }</dd>
+    """
+    if $scope.sales[idx].lx7 > 0
+      t += """
+        <dt>Лото x7:</dt>
+        <dd>#{ $scope.sales[idx].lx7 }</dd>
+      """
+    t += "</dl>"
+    $scope.bubble.html ''
+    $scope.bubble.transition().duration 500
+          .style 'opacity', 0.75
+    $scope.bubble.html t
+          .style 'left', (event.pageX + 10) + 'px'
+          .style 'top', (pos.top + offset.top - 90) + 'px'
+          .style 'opacity', 1
+    $scope.bubble.transition().duration 4000
+          .style 'opacity', 0
   # line chart
   $scope.hideChart = true
   $scope.lineChart = { }
@@ -368,7 +405,6 @@ angular.module 'app', ['ionic']
       '1ви', '2ри', '3ти', '4ти', '5ти', '6ти' ]
 
 .controller 'WinnersStats', ($scope, $http, $ionicLoading) ->
-  
   $scope.bubble = d3.select '#stats-list'
                     .append 'div'
                     .attr 'class', 'bubble bubble-left'
