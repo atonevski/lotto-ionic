@@ -127,22 +127,25 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
       duration: 3000
     });
   });
-}).controller('Weekly', function($scope, $http, $stateParams, $ionicLoading, $ionicPosition) {
+}).controller('Weekly', function($scope, $http, $stateParams, $ionicLoading, $ionicPosition, $ionicScrollDelegate) {
   var query, queryYear;
   $scope.bubble = d3.select('#weekly-list').append('div').attr('class', 'bubble bubble-left').style('opacity', 0);
   $scope.showBubble = function(event, idx) {
-    var offset, pos, t;
-    console.log($ionicPosition.offset((d3.select("\#draw-" + $scope.sales[idx].draw))[0]));
-    offset = $ionicPosition.offset((d3.select("\#draw-" + $scope.sales[idx].draw))[0]);
-    pos = $ionicPosition.position((d3.select("\#draw-" + $scope.sales[idx].draw))[0]);
+    var el, new_top, offset, pos, t;
+    event.stopPropagation();
+    el = angular.element(document.querySelector("\#draw-" + $scope.sales[idx].draw));
+    console.log($ionicPosition.offset(el));
+    offset = $ionicPosition.offset(el);
+    pos = $ionicPosition.position(el);
     t = "<dl class='dl-horizontal'>\n  <dt>Коло:</dt>\n  <dd>" + $scope.sales[idx].draw + "</dd>\n  <dt>Дата:</dt>\n  <dd>" + ($scope.sales[idx].date.toISOString().slice(0, 10).split('-').reverse().join('.')) + "</dd>\n  <dt>Уплата лото:</dt>\n  <dd>" + ($scope.thou_sep($scope.sales[idx].lotto)) + "</dd>\n  <dt>Уплата џокер:</dt>\n  <dd>" + ($scope.thou_sep($scope.sales[idx].joker)) + "</dd>";
     if ($scope.sales[idx].lx7 > 0) {
       t += "<dt>Лото x7:</dt>\n<dd>" + $scope.sales[idx].lx7 + "</dd>";
     }
     t += "</dl>";
-    $scope.bubble.html('');
-    $scope.bubble.transition().duration(500).style('opacity', 0.75);
-    $scope.bubble.html(t).style('left', (event.pageX + 10) + 'px').style('top', (pos.top + offset.top - 90) + 'px').style('opacity', 1);
+    console.log($ionicScrollDelegate.getScrollPosition().top);
+    new_top = offset.top + $ionicScrollDelegate.getScrollPosition().top;
+    $scope.bubble.html('').style('left', (event.pageX + 10) + 'px').style('top', (new_top - 100) + 'px');
+    $scope.bubble.html(t).style('left', (event.pageX + 10) + 'px').style('top', (new_top - 100) + '').style('opacity', 1);
     return $scope.bubble.transition().duration(4000).style('opacity', 0);
   };
   $scope.hideChart = true;

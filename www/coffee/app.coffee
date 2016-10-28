@@ -138,17 +138,22 @@ angular.module 'app', ['ionic']
         duration: 3000
       })
           
-.controller 'Weekly', ($scope, $http, $stateParams, $ionicLoading, $ionicPosition) ->
+.controller 'Weekly', ($scope, $http, $stateParams, $ionicLoading, $ionicPosition, $ionicScrollDelegate) ->
   $scope.bubble = d3.select '#weekly-list'
                     .append 'div'
                     .attr 'class', 'bubble bubble-left'
                     .style 'opacity', 0
 
   $scope.showBubble = (event, idx) ->
+    event.stopPropagation()
+
     # console.log event, event.x, event.y, event.offsetX, event.offsetY
-    console.log $ionicPosition.offset (d3.select "\#draw-#{$scope.sales[idx].draw}")[0]
-    offset = $ionicPosition.offset (d3.select "\#draw-#{$scope.sales[idx].draw}")[0]
-    pos  = $ionicPosition.position (d3.select "\#draw-#{$scope.sales[idx].draw}")[0]
+    # el = d3.select "\#draw-#{$scope.sales[idx].draw}"
+    el = angular.element document.querySelector "\#draw-#{$scope.sales[idx].draw}"
+
+    console.log $ionicPosition.offset el
+    offset = $ionicPosition.offset el
+    pos  = $ionicPosition.position el
     t = """
       <dl class='dl-horizontal'>
         <dt>Коло:</dt>
@@ -167,12 +172,19 @@ angular.module 'app', ['ionic']
         <dd>#{ $scope.sales[idx].lx7 }</dd>
       """
     t += "</dl>"
+    console.log $ionicScrollDelegate.getScrollPosition().top
+    new_top = offset.top + $ionicScrollDelegate.getScrollPosition().top
+
     $scope.bubble.html ''
-    $scope.bubble.transition().duration 500
-          .style 'opacity', 0.75
-    $scope.bubble.html t
           .style 'left', (event.pageX + 10) + 'px'
-          .style 'top', (pos.top + offset.top - 90) + 'px'
+          .style 'top', (new_top - 100) + 'px'
+          # .style 'position', 'relative'
+    # $scope.bubble.transition().duration 500
+    #       .style 'opacity', 0.75
+    $scope.bubble.html t
+          #.transition().duration 500
+          .style 'left', (event.pageX + 10) + 'px'
+          .style 'top', (new_top - 100) + ''
           .style 'opacity', 1
     $scope.bubble.transition().duration 4000
           .style 'opacity', 0
