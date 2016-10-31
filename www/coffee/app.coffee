@@ -138,22 +138,24 @@ angular.module 'app', ['ionic']
         duration: 3000
       })
           
-.controller 'Weekly', ($scope, $http, $stateParams, $ionicLoading, $ionicPosition, $ionicScrollDelegate) ->
+.controller 'Weekly', ($scope, $http, $stateParams, $timeout, $ionicLoading, $ionicPosition, $ionicScrollDelegate) ->
+  $scope.bubbleVisible = no
   $scope.bubble = d3.select '#weekly-list'
                     .append 'div'
                     .attr 'class', 'bubble bubble-left'
+                    .attr 'id', 'weekly-bubble'
+                    .on('click', ()->
+                      $scope.bubble.transition().duration 1000
+                            .style 'opacity', 0
+                      $scope.bubbleVisible = no
+                    )
                     .style 'opacity', 0
 
   $scope.showBubble = (event, idx) ->
+    return if $scope.bubbleVisible
     event.stopPropagation()
+    $scope.bubbleVisible = yes
 
-    # console.log event, event.x, event.y, event.offsetX, event.offsetY
-    # el = d3.select "\#draw-#{$scope.sales[idx].draw}"
-    el = angular.element document.querySelector "\#draw-#{$scope.sales[idx].draw}"
-
-    console.log $ionicPosition.offset el
-    offset = $ionicPosition.offset el
-    pos  = $ionicPosition.position el
     t = """
       <div class='row row-no-padding'>
         <div class='col col-offset-80 text-right positive'>
@@ -166,33 +168,65 @@ angular.module 'app', ['ionic']
         <dt>Дата:</dt>
         <dd>#{ $scope.sales[idx].date.toISOString()[0..9]
                      .split('-').reverse().join('.') }</dd>
+        <hr />
         <dt>Уплата лото:</dt>
         <dd>#{ $scope.thou_sep $scope.sales[idx].lotto }</dd>
+    """
+    t += """
+        <dt>Лото добитници:</dt>
+        <dd>
+          #{ if $scope.sales[idx].lx7 > 0 then $scope.sales[idx].lx7 + 'x7'  else '' }
+          #{ if $scope.sales[idx].lx6p > 0 then $scope.sales[idx].lx6p +
+                 'x6<sup><strong>+</strong></sup>' else '' } 
+          #{ if $scope.sales[idx].lx6 > 0 then $scope.sales[idx].lx6 + 'x6' else '' } 
+          #{ if $scope.sales[idx].lx5 > 0 then $scope.thou_sep $scope.sales[idx].lx5 + 'x5' else '' } 
+          #{ if $scope.sales[idx].lx4 > 0 then $scope.thou_sep $scope.sales[idx].lx4 + 'x4' else '' } 
+        </dd>
+    """
+    t += """
+        <dt>Лото доб. комбинација:</dt>
+        <dd>
+          #{ $scope.sales[idx].lwcol[0..6].sort((a, b)-> +a - +b).join(' ') }
+          <span style='color: darkgray'>#{ $scope.sales[idx].lwcol[7] }</span>
+          <br />
+          [ #{ $scope.sales[idx].lwcol[0..6].join(' ') }
+          <span style='color: darkgray'>#{ $scope.sales[idx].lwcol[7] }</span> ]
+        </dd>
+    """
+
+    t += """
+        <hr />
         <dt>Уплата џокер:</dt>
         <dd>#{ $scope.thou_sep $scope.sales[idx].joker }</dd>
     """
-    if $scope.sales[idx].lx7 > 0
-      t += """
-        <dt>Лото x7:</dt>
-        <dd>#{ $scope.sales[idx].lx7 }</dd>
-      """
-    t += "</dl>"
-    console.log $ionicScrollDelegate.getScrollPosition().top
-    new_top = offset.top + $ionicScrollDelegate.getScrollPosition().top
+    t += """
+        <dt>Џокер добитници:</dt>
+        <dd>
+          #{ if $scope.sales[idx].jx6 > 0 then $scope.sales[idx].jx6 + 'x6' else '' }
+          #{ if $scope.sales[idx].jx5 > 0 then $scope.sales[idx].jx5 + 'x5' else '' } 
+          #{ if $scope.sales[idx].jx4 > 0 then $scope.sales[idx].jx4 + 'x4' else '' } 
+          #{ if $scope.sales[idx].jx3 > 0 then $scope.thou_sep $scope.sales[idx].jx3 + 'x3' else '' } 
+          #{ if $scope.sales[idx].jx2 > 0 then $scope.thou_sep $scope.sales[idx].jx2 + 'x2' else '' } 
+          #{ if $scope.sales[idx].jx1 > 0 then $scope.thou_sep $scope.sales[idx].jx1 + 'x1' else '' } 
+        </dd>
+    """
+    t += """
+        <dt>Џокер доб. комбинација:</dt>
+        <dd>
+          #{ $scope.sales[idx].jwcol.split('').join(' ') }
+        </dd>
+    """
 
-    $scope.bubble.html ''
+    t += "</dl>"
+
+    el = angular.element document.querySelector "\#draw-#{$scope.sales[idx].draw}"
+    offset = $ionicPosition.offset el
+    new_top = offset.top + $ionicScrollDelegate.getScrollPosition().top
+    $scope.bubble.html t
           .style 'left', (event.pageX + 10) + 'px'
           .style 'top', (new_top - 100) + 'px'
-          # .style 'position', 'relative'
-    # $scope.bubble.transition().duration 500
-    #       .style 'opacity', 0.75
-    $scope.bubble.html t
-          #.transition().duration 500
-          .style 'left', (event.pageX + 10) + 'px'
-          .style 'top', (new_top - 100) + ''
           .style 'opacity', 1
-    $scope.bubble.transition().duration 4000
-          .style 'opacity', 0
+
   # line chart
   $scope.hideChart = true
   $scope.lineChart = { }
@@ -227,7 +261,10 @@ angular.module 'app', ['ionic']
   $scope.year = parseInt $stateParams.year
   # A: draw #, B: date, C: lotto sales, D: x7 (lotto), I: joker sales, J: x6 (joker)
   queryYear = """SELECT A, dayOfWeek(B), 
-                        C, I, B, D, J
+                        C, I, B, D, E, F, G, H,
+                        J, K, L, M, N, O,
+                        P, Q, R, S, T, U, V, W,
+                        X
                  WHERE YEAR(B) = #{ $scope.year }
                  ORDER BY A"""
   $ionicLoading.show()
@@ -243,7 +280,21 @@ angular.module 'app', ['ionic']
           joker:  a[3]
           date:   a[4]
           lx7:    a[5]
-          jx6:    a[6]
+          lx6p:   a[6]
+          lx6:    a[7]
+          lx5:    a[8]
+          lx4:    a[9]
+
+          lwcol:  a[16..23]
+
+          jx6:    a[10]
+          jx5:    a[11]
+          jx4:    a[12]
+          jx3:    a[13]
+          jx2:    a[14]
+          jx1:    a[15]
+
+          jwcol:  a[24]
         }
       $scope.buildSeries()
       $ionicLoading.hide()
@@ -278,10 +329,13 @@ angular.module 'app', ['ionic']
     $scope.lineChart.hide = true
     $scope.select = v
     $scope.year   = $scope.select.year
-    queryYear = """SELECT A, dayOfWeek(B),
-                          C, I, B, D, J
-                   WHERE YEAR(B) = #{ $scope.year }
-                   ORDER BY A"""
+    queryYear = """SELECT A, dayOfWeek(B), 
+                          C, I, B, D, E, F, G, H,
+                          J, K, L, M, N, O,
+                          P, Q, R, S, T, U, V, W,
+                          X
+                  WHERE YEAR(B) = #{ $scope.year }
+                  ORDER BY A"""
     # update scope.sales and scope.series
     $ionicLoading.show()
     $http.get $scope.qurl(queryYear)
@@ -296,7 +350,21 @@ angular.module 'app', ['ionic']
             joker:  a[3]
             date:   a[4]
             lx7:    a[5]
-            jx6:    a[6]
+            lx6p:   a[6]
+            lx6:    a[7]
+            lx5:    a[8]
+            lx4:    a[9]
+
+            lwcol:  a[16..23]
+
+            jx6:    a[10]
+            jx5:    a[11]
+            jx4:    a[12]
+            jx3:    a[13]
+            jx2:    a[14]
+            jx1:    a[15]
+
+            jwcol:  a[24]
           }
         $scope.buildSeries()
         $scope.lineChart.hide = true
