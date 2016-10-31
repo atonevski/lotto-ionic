@@ -155,6 +155,11 @@ angular.module 'app', ['ionic']
     offset = $ionicPosition.offset el
     pos  = $ionicPosition.position el
     t = """
+      <div class='row row-no-padding'>
+        <div class='col col-offset-80 text-right positive'>
+          <small><i class='ion-close-round'></i></small>
+        </div>
+      </div>
       <dl class='dl-horizontal'>
         <dt>Коло:</dt>
         <dd>#{ $scope.sales[idx].draw }</dd>

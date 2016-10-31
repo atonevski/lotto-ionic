@@ -78,6 +78,7 @@ div.tooltip {
 
 .bubble{
     background-color: #f7faa0;
+    color: black;
     border-radius: 5px;
     box-shadow: 0 0 6px #b2b2b2;
     display: inline-block;
@@ -92,6 +93,7 @@ div.tooltip {
 
 .bubble::before {
     background-color: #f7faa0;
+    color: black;
     content: "\00a0";
     display: block;
     height: 16px;

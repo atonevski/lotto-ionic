@@ -137,7 +137,7 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
     console.log($ionicPosition.offset(el));
     offset = $ionicPosition.offset(el);
     pos = $ionicPosition.position(el);
-    t = "<dl class='dl-horizontal'>\n  <dt>Коло:</dt>\n  <dd>" + $scope.sales[idx].draw + "</dd>\n  <dt>Дата:</dt>\n  <dd>" + ($scope.sales[idx].date.toISOString().slice(0, 10).split('-').reverse().join('.')) + "</dd>\n  <dt>Уплата лото:</dt>\n  <dd>" + ($scope.thou_sep($scope.sales[idx].lotto)) + "</dd>\n  <dt>Уплата џокер:</dt>\n  <dd>" + ($scope.thou_sep($scope.sales[idx].joker)) + "</dd>";
+    t = "<div class='row row-no-padding'>\n  <div class='col col-offset-80 text-right positive'>\n    <small><i class='ion-close-round'></i></small>\n  </div>\n</div>\n<dl class='dl-horizontal'>\n  <dt>Коло:</dt>\n  <dd>" + $scope.sales[idx].draw + "</dd>\n  <dt>Дата:</dt>\n  <dd>" + ($scope.sales[idx].date.toISOString().slice(0, 10).split('-').reverse().join('.')) + "</dd>\n  <dt>Уплата лото:</dt>\n  <dd>" + ($scope.thou_sep($scope.sales[idx].lotto)) + "</dd>\n  <dt>Уплата џокер:</dt>\n  <dd>" + ($scope.thou_sep($scope.sales[idx].joker)) + "</dd>";
     if ($scope.sales[idx].lx7 > 0) {
       t += "<dt>Лото x7:</dt>\n<dd>" + $scope.sales[idx].lx7 + "</dd>";
     }
