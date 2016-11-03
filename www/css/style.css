@@ -133,3 +133,22 @@ div.tooltip {
     right: -9px;   
     z-index: 100;
 }
+dl.dl-horizontal {
+  text-align: center;
+  font-size: 0;
+}
+dl.dl-horizontal dt {
+  font-size: 11px;
+  display: inline-block;
+  width: 50%; 
+  text-align: right;
+  vertical-align: middle;
+}
+dl.dl-horizontal dd {
+  font-size: 10px;
+  display: inline-block;
+  width: 50%;
+  vertical-align: middle;
+  text-align: left;
+  padding-left: 4px;
+}

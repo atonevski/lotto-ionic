@@ -169,11 +169,13 @@ angular.module 'app', ['ionic']
         <dd>#{ $scope.sales[idx].date.toISOString()[0..9]
                      .split('-').reverse().join('.') }</dd>
         <hr />
-        <dt>Уплата лото:</dt>
+        <dt>Лото:</dt><dd></dd>
+        <hr />
+        <dt>Уплата:</dt>
         <dd>#{ $scope.thou_sep $scope.sales[idx].lotto }</dd>
     """
     t += """
-        <dt>Лото добитници:</dt>
+        <dt>Добитници:</dt>
         <dd>
           #{ if $scope.sales[idx].lx7 > 0 then $scope.sales[idx].lx7 + 'x7'  else '' }
           #{ if $scope.sales[idx].lx6p > 0 then $scope.sales[idx].lx6p +
@@ -184,23 +186,25 @@ angular.module 'app', ['ionic']
         </dd>
     """
     t += """
-        <dt>Лото доб. комбинација:</dt>
+        <dt>Доб. комбинација:</dt>
         <dd>
           #{ $scope.sales[idx].lwcol[0..6].sort((a, b)-> +a - +b).join(' ') }
-          <span style='color: darkgray'>#{ $scope.sales[idx].lwcol[7] }</span>
+          <span style='color: steelblue'>#{ $scope.sales[idx].lwcol[7] }</span>
           <br />
           [ #{ $scope.sales[idx].lwcol[0..6].join(' ') }
-          <span style='color: darkgray'>#{ $scope.sales[idx].lwcol[7] }</span> ]
+          <span style='color: steelblue'>#{ $scope.sales[idx].lwcol[7] }</span> ]
         </dd>
     """
 
     t += """
         <hr />
-        <dt>Уплата џокер:</dt>
+        <dt>Џокер:</dt><dd></dd>
+        <hr />
+        <dt>Уплата:</dt>
         <dd>#{ $scope.thou_sep $scope.sales[idx].joker }</dd>
     """
     t += """
-        <dt>Џокер добитници:</dt>
+        <dt>Добитници:</dt>
         <dd>
           #{ if $scope.sales[idx].jx6 > 0 then $scope.sales[idx].jx6 + 'x6' else '' }
           #{ if $scope.sales[idx].jx5 > 0 then $scope.sales[idx].jx5 + 'x5' else '' } 
@@ -211,7 +215,7 @@ angular.module 'app', ['ionic']
         </dd>
     """
     t += """
-        <dt>Џокер доб. комбинација:</dt>
+        <dt>Доб. комбинација:</dt>
         <dd>
           #{ $scope.sales[idx].jwcol.split('').join(' ') }
         </dd>
@@ -521,12 +525,22 @@ angular.module 'app', ['ionic']
         <dd>#{ $scope.winners[idx].draws }</dd>
         <hr />
         <dt>Лото:</dt><dd></dd>
+        <hr />
         <dt>Најмала уплата:</dt>
         <dd>#{ $scope.thou_sep $scope.winners[idx].min }</dd>
         <dt>Просечна уплата:</dt>
         <dd>#{ $scope.thou_sep $scope.winners[idx].avg }</dd>
         <dt>Најголема уплата:</dt>
         <dd>#{ $scope.thou_sep $scope.winners[idx].max }</dd>
+        <hr />
+        <dt>Џокер:</dt><dd></dd>
+        <hr />
+        <dt>Најмала уплата:</dt>
+        <dd>#{ $scope.thou_sep $scope.winners[idx].jmin }</dd>
+        <dt>Просечна уплата:</dt>
+        <dd>#{ $scope.thou_sep $scope.winners[idx].javg }</dd>
+        <dt>Најголема уплата:</dt>
+        <dd>#{ $scope.thou_sep $scope.winners[idx].jmax }</dd>
       </dl>
     """
 
@@ -605,8 +619,10 @@ angular.module 'app', ['ionic']
       })
 
   # A: draw #, B: date, P..W: winning column lotto, X: winning column joker
-  query = """SELECT YEAR(B), COUNT(A), MIN(C), MAX(C), AVG(C), SUM(D),
-                    SUM(E), AVG(F), AVG(G), AVG(H)
+  query = """SELECT 
+                YEAR(B), COUNT(A), MIN(C), MAX(C), AVG(C),
+                SUM(D), SUM(E), AVG(F), AVG(G), AVG(H),
+                MIN(I), MAX(I), AVG(I)
              GROUP BY YEAR(B)
              ORDER BY YEAR(B)"""
   $http.get $scope.qurl(query)
@@ -617,9 +633,14 @@ angular.module 'app', ['ionic']
         {
           year:   a[0]
           draws:  a[1]
+
           min:    a[2]
           max:    a[3]
           avg:    Math.round a[4]
+          jmin:   a[10]
+          jmax:   a[11]
+          javg:   Math.round a[12]
+
           x7:     a[5]
           'x6+1': a[6]
           x6:     Math.round a[7]

@@ -141,14 +141,14 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
     }
     event.stopPropagation();
     $scope.bubbleVisible = true;
-    t = "<div class='row row-no-padding'>\n  <div class='col col-offset-80 text-right positive'>\n    <small><i class='ion-close-round'></i></small>\n  </div>\n</div>\n<dl class='dl-horizontal'>\n  <dt>Коло:</dt>\n  <dd>" + $scope.sales[idx].draw + "</dd>\n  <dt>Дата:</dt>\n  <dd>" + ($scope.sales[idx].date.toISOString().slice(0, 10).split('-').reverse().join('.')) + "</dd>\n  <hr />\n  <dt>Уплата лото:</dt>\n  <dd>" + ($scope.thou_sep($scope.sales[idx].lotto)) + "</dd>";
-    t += "<dt>Лото добитници:</dt>\n<dd>\n  " + ($scope.sales[idx].lx7 > 0 ? $scope.sales[idx].lx7 + 'x7' : '') + "\n  " + ($scope.sales[idx].lx6p > 0 ? $scope.sales[idx].lx6p + 'x6<sup><strong>+</strong></sup>' : '') + " \n  " + ($scope.sales[idx].lx6 > 0 ? $scope.sales[idx].lx6 + 'x6' : '') + " \n  " + ($scope.sales[idx].lx5 > 0 ? $scope.thou_sep($scope.sales[idx].lx5 + 'x5') : '') + " \n  " + ($scope.sales[idx].lx4 > 0 ? $scope.thou_sep($scope.sales[idx].lx4 + 'x4') : '') + " \n</dd>";
-    t += "<dt>Лото доб. комбинација:</dt>\n<dd>\n  " + ($scope.sales[idx].lwcol.slice(0, 7).sort(function(a, b) {
+    t = "<div class='row row-no-padding'>\n  <div class='col col-offset-80 text-right positive'>\n    <small><i class='ion-close-round'></i></small>\n  </div>\n</div>\n<dl class='dl-horizontal'>\n  <dt>Коло:</dt>\n  <dd>" + $scope.sales[idx].draw + "</dd>\n  <dt>Дата:</dt>\n  <dd>" + ($scope.sales[idx].date.toISOString().slice(0, 10).split('-').reverse().join('.')) + "</dd>\n  <hr />\n  <dt>Лото:</dt><dd></dd>\n  <hr />\n  <dt>Уплата:</dt>\n  <dd>" + ($scope.thou_sep($scope.sales[idx].lotto)) + "</dd>";
+    t += "<dt>Добитници:</dt>\n<dd>\n  " + ($scope.sales[idx].lx7 > 0 ? $scope.sales[idx].lx7 + 'x7' : '') + "\n  " + ($scope.sales[idx].lx6p > 0 ? $scope.sales[idx].lx6p + 'x6<sup><strong>+</strong></sup>' : '') + " \n  " + ($scope.sales[idx].lx6 > 0 ? $scope.sales[idx].lx6 + 'x6' : '') + " \n  " + ($scope.sales[idx].lx5 > 0 ? $scope.thou_sep($scope.sales[idx].lx5 + 'x5') : '') + " \n  " + ($scope.sales[idx].lx4 > 0 ? $scope.thou_sep($scope.sales[idx].lx4 + 'x4') : '') + " \n</dd>";
+    t += "<dt>Доб. комбинација:</dt>\n<dd>\n  " + ($scope.sales[idx].lwcol.slice(0, 7).sort(function(a, b) {
       return +a - +b;
-    }).join(' ')) + "\n  <span style='color: darkgray'>" + $scope.sales[idx].lwcol[7] + "</span>\n  <br />\n  [ " + ($scope.sales[idx].lwcol.slice(0, 7).join(' ')) + "\n  <span style='color: darkgray'>" + $scope.sales[idx].lwcol[7] + "</span> ]\n</dd>";
-    t += "<hr />\n<dt>Уплата џокер:</dt>\n<dd>" + ($scope.thou_sep($scope.sales[idx].joker)) + "</dd>";
-    t += "<dt>Џокер добитници:</dt>\n<dd>\n  " + ($scope.sales[idx].jx6 > 0 ? $scope.sales[idx].jx6 + 'x6' : '') + "\n  " + ($scope.sales[idx].jx5 > 0 ? $scope.sales[idx].jx5 + 'x5' : '') + " \n  " + ($scope.sales[idx].jx4 > 0 ? $scope.sales[idx].jx4 + 'x4' : '') + " \n  " + ($scope.sales[idx].jx3 > 0 ? $scope.thou_sep($scope.sales[idx].jx3 + 'x3') : '') + " \n  " + ($scope.sales[idx].jx2 > 0 ? $scope.thou_sep($scope.sales[idx].jx2 + 'x2') : '') + " \n  " + ($scope.sales[idx].jx1 > 0 ? $scope.thou_sep($scope.sales[idx].jx1 + 'x1') : '') + " \n</dd>";
-    t += "<dt>Џокер доб. комбинација:</dt>\n<dd>\n  " + ($scope.sales[idx].jwcol.split('').join(' ')) + "\n</dd>";
+    }).join(' ')) + "\n  <span style='color: steelblue'>" + $scope.sales[idx].lwcol[7] + "</span>\n  <br />\n  [ " + ($scope.sales[idx].lwcol.slice(0, 7).join(' ')) + "\n  <span style='color: steelblue'>" + $scope.sales[idx].lwcol[7] + "</span> ]\n</dd>";
+    t += "<hr />\n<dt>Џокер:</dt><dd></dd>\n<hr />\n<dt>Уплата:</dt>\n<dd>" + ($scope.thou_sep($scope.sales[idx].joker)) + "</dd>";
+    t += "<dt>Добитници:</dt>\n<dd>\n  " + ($scope.sales[idx].jx6 > 0 ? $scope.sales[idx].jx6 + 'x6' : '') + "\n  " + ($scope.sales[idx].jx5 > 0 ? $scope.sales[idx].jx5 + 'x5' : '') + " \n  " + ($scope.sales[idx].jx4 > 0 ? $scope.sales[idx].jx4 + 'x4' : '') + " \n  " + ($scope.sales[idx].jx3 > 0 ? $scope.thou_sep($scope.sales[idx].jx3 + 'x3') : '') + " \n  " + ($scope.sales[idx].jx2 > 0 ? $scope.thou_sep($scope.sales[idx].jx2 + 'x2') : '') + " \n  " + ($scope.sales[idx].jx1 > 0 ? $scope.thou_sep($scope.sales[idx].jx1 + 'x1') : '') + " \n</dd>";
+    t += "<dt>Доб. комбинација:</dt>\n<dd>\n  " + ($scope.sales[idx].jwcol.split('').join(' ')) + "\n</dd>";
     t += "</dl>";
     el = angular.element(document.querySelector("\#draw-" + $scope.sales[idx].draw));
     offset = $ionicPosition.offset(el);
@@ -483,7 +483,7 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
     }
     event.stopPropagation();
     $scope.bubbleVisible = true;
-    t = "<div class='row row-no-padding'>\n  <div class='col col-offset-80 text-right positive'>\n    <small><i class='ion-close-round'></i></small>\n  </div>\n</div>\n<dl class='dl-horizontal'>\n  <dt>Година:</dt>\n  <dd>" + $scope.winners[idx].year + "</dd>\n  <dt>Вкупно кола:</dt>\n  <dd>" + $scope.winners[idx].draws + "</dd>\n  <hr />\n  <dt>Лото:</dt><dd></dd>\n  <dt>Најмала уплата:</dt>\n  <dd>" + ($scope.thou_sep($scope.winners[idx].min)) + "</dd>\n  <dt>Просечна уплата:</dt>\n  <dd>" + ($scope.thou_sep($scope.winners[idx].avg)) + "</dd>\n  <dt>Најголема уплата:</dt>\n  <dd>" + ($scope.thou_sep($scope.winners[idx].max)) + "</dd>\n</dl>";
+    t = "<div class='row row-no-padding'>\n  <div class='col col-offset-80 text-right positive'>\n    <small><i class='ion-close-round'></i></small>\n  </div>\n</div>\n<dl class='dl-horizontal'>\n  <dt>Година:</dt>\n  <dd>" + $scope.winners[idx].year + "</dd>\n  <dt>Вкупно кола:</dt>\n  <dd>" + $scope.winners[idx].draws + "</dd>\n  <hr />\n  <dt>Лото:</dt><dd></dd>\n  <hr />\n  <dt>Најмала уплата:</dt>\n  <dd>" + ($scope.thou_sep($scope.winners[idx].min)) + "</dd>\n  <dt>Просечна уплата:</dt>\n  <dd>" + ($scope.thou_sep($scope.winners[idx].avg)) + "</dd>\n  <dt>Најголема уплата:</dt>\n  <dd>" + ($scope.thou_sep($scope.winners[idx].max)) + "</dd>\n  <hr />\n  <dt>Џокер:</dt><dd></dd>\n  <hr />\n  <dt>Најмала уплата:</dt>\n  <dd>" + ($scope.thou_sep($scope.winners[idx].jmin)) + "</dd>\n  <dt>Просечна уплата:</dt>\n  <dd>" + ($scope.thou_sep($scope.winners[idx].javg)) + "</dd>\n  <dt>Најголема уплата:</dt>\n  <dd>" + ($scope.thou_sep($scope.winners[idx].jmax)) + "</dd>\n</dl>";
     el = angular.element(document.querySelector("\#winners-" + $scope.winners[idx].year));
     offset = $ionicPosition.offset(el);
     new_top = offset.top + $ionicScrollDelegate.getScrollPosition().top;
@@ -538,7 +538,7 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
       duration: 3000
     });
   });
-  query = "SELECT YEAR(B), COUNT(A), MIN(C), MAX(C), AVG(C), SUM(D),\n       SUM(E), AVG(F), AVG(G), AVG(H)\nGROUP BY YEAR(B)\nORDER BY YEAR(B)";
+  query = "SELECT \n   YEAR(B), COUNT(A), MIN(C), MAX(C), AVG(C),\n   SUM(D), SUM(E), AVG(F), AVG(G), AVG(H),\n   MIN(I), MAX(I), AVG(I)\nGROUP BY YEAR(B)\nORDER BY YEAR(B)";
   return $http.get($scope.qurl(query)).success(function(data, status) {
     var res;
     res = $scope.to_json(data);
@@ -551,6 +551,9 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
         min: a[2],
         max: a[3],
         avg: Math.round(a[4]),
+        jmin: a[10],
+        jmax: a[11],
+        javg: Math.round(a[12]),
         x7: a[5],
         'x6+1': a[6],
         x6: Math.round(a[7]),
