@@ -489,19 +489,38 @@ angular.module 'app', ['ionic']
     $scope.sbarChart.categories = [
       '1ви', '2ри', '3ти', '4ти', '5ти', '6ти' ]
 
-.controller 'WinnersStats', ($scope, $http, $ionicLoading) ->
+.controller 'WinnersStats', ($scope, $http, $ionicLoading, $ionicPosition, $ionicScrollDelegate) ->
+  $scope.bubbleVisible = no
   $scope.bubble = d3.select '#stats-list'
                     .append 'div'
                     .attr 'class', 'bubble bubble-left'
+                    .attr 'id', 'winners-bubble'
+                    .on('click', ()->
+                      $scope.bubble.transition().duration 1000
+                            .style 'opacity', 0
+                      $scope.bubbleVisible = no
+                    )
                     .style 'opacity', 0
 
   $scope.showBubble = (event, idx) ->
+
+    return if $scope.bubbleVisible
+    event.stopPropagation()
+    $scope.bubbleVisible = yes
+
     t = """
+      <div class='row row-no-padding'>
+        <div class='col col-offset-80 text-right positive'>
+          <small><i class='ion-close-round'></i></small>
+        </div>
+      </div>
       <dl class='dl-horizontal'>
         <dt>Година:</dt>
         <dd>#{ $scope.winners[idx].year }</dd>
         <dt>Вкупно кола:</dt>
         <dd>#{ $scope.winners[idx].draws }</dd>
+        <hr />
+        <dt>Лото:</dt><dd></dd>
         <dt>Најмала уплата:</dt>
         <dd>#{ $scope.thou_sep $scope.winners[idx].min }</dd>
         <dt>Просечна уплата:</dt>
@@ -510,16 +529,15 @@ angular.module 'app', ['ionic']
         <dd>#{ $scope.thou_sep $scope.winners[idx].max }</dd>
       </dl>
     """
-    
-    $scope.bubble.html ''
-    $scope.bubble.transition().duration 500
-          .style 'opacity', 0.75
+
+    el = angular.element document.querySelector "\#winners-#{$scope.winners[idx].year}"
+    offset = $ionicPosition.offset el
+    new_top = offset.top + $ionicScrollDelegate.getScrollPosition().top
     $scope.bubble.html t
           .style 'left', (event.pageX + 10) + 'px'
-          .style 'top', (event.pageY - 70) + 'px'
+          .style 'top', (new_top - 60) + 'px'
           .style 'opacity', 1
-    $scope.bubble.transition().duration 4000
-          .style 'opacity', 0
+    
 
   # load data
   $ionicLoading.show()

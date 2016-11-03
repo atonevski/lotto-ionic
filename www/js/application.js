@@ -469,16 +469,25 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
     $scope.sbarChart.labels = 'number';
     return $scope.sbarChart.categories = ['1ви', '2ри', '3ти', '4ти', '5ти', '6ти'];
   };
-}).controller('WinnersStats', function($scope, $http, $ionicLoading) {
+}).controller('WinnersStats', function($scope, $http, $ionicLoading, $ionicPosition, $ionicScrollDelegate) {
   var query, qx6, qx6p, qx7;
-  $scope.bubble = d3.select('#stats-list').append('div').attr('class', 'bubble bubble-left').style('opacity', 0);
+  $scope.bubbleVisible = false;
+  $scope.bubble = d3.select('#stats-list').append('div').attr('class', 'bubble bubble-left').attr('id', 'winners-bubble').on('click', function() {
+    $scope.bubble.transition().duration(1000).style('opacity', 0);
+    return $scope.bubbleVisible = false;
+  }).style('opacity', 0);
   $scope.showBubble = function(event, idx) {
-    var t;
-    t = "<dl class='dl-horizontal'>\n  <dt>Година:</dt>\n  <dd>" + $scope.winners[idx].year + "</dd>\n  <dt>Вкупно кола:</dt>\n  <dd>" + $scope.winners[idx].draws + "</dd>\n  <dt>Најмала уплата:</dt>\n  <dd>" + ($scope.thou_sep($scope.winners[idx].min)) + "</dd>\n  <dt>Просечна уплата:</dt>\n  <dd>" + ($scope.thou_sep($scope.winners[idx].avg)) + "</dd>\n  <dt>Најголема уплата:</dt>\n  <dd>" + ($scope.thou_sep($scope.winners[idx].max)) + "</dd>\n</dl>";
-    $scope.bubble.html('');
-    $scope.bubble.transition().duration(500).style('opacity', 0.75);
-    $scope.bubble.html(t).style('left', (event.pageX + 10) + 'px').style('top', (event.pageY - 70) + 'px').style('opacity', 1);
-    return $scope.bubble.transition().duration(4000).style('opacity', 0);
+    var el, new_top, offset, t;
+    if ($scope.bubbleVisible) {
+      return;
+    }
+    event.stopPropagation();
+    $scope.bubbleVisible = true;
+    t = "<div class='row row-no-padding'>\n  <div class='col col-offset-80 text-right positive'>\n    <small><i class='ion-close-round'></i></small>\n  </div>\n</div>\n<dl class='dl-horizontal'>\n  <dt>Година:</dt>\n  <dd>" + $scope.winners[idx].year + "</dd>\n  <dt>Вкупно кола:</dt>\n  <dd>" + $scope.winners[idx].draws + "</dd>\n  <hr />\n  <dt>Лото:</dt><dd></dd>\n  <dt>Најмала уплата:</dt>\n  <dd>" + ($scope.thou_sep($scope.winners[idx].min)) + "</dd>\n  <dt>Просечна уплата:</dt>\n  <dd>" + ($scope.thou_sep($scope.winners[idx].avg)) + "</dd>\n  <dt>Најголема уплата:</dt>\n  <dd>" + ($scope.thou_sep($scope.winners[idx].max)) + "</dd>\n</dl>";
+    el = angular.element(document.querySelector("\#winners-" + $scope.winners[idx].year));
+    offset = $ionicPosition.offset(el);
+    new_top = offset.top + $ionicScrollDelegate.getScrollPosition().top;
+    return $scope.bubble.html(t).style('left', (event.pageX + 10) + 'px').style('top', (new_top - 60) + 'px').style('opacity', 1);
   };
   $ionicLoading.show();
   qx7 = "SELECT\n  YEAR(B), COUNT(D)\nWHERE D > 0\nGROUP BY YEAR(B)\nORDER BY YEAR(B)";

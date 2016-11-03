@@ -15,7 +15,7 @@
       <div class='item item-stats' ng-repeat='w in winners'
           ng-class="{ even: $index % 2 == 0, odd: $index % 2 == 1 }"
           ng-click='showBubble($event, $index)'>
-        <div class='row row-no-padding'>
+        <div class='row row-no-padding' id='winners-{{ w.year }}'>
           <div class='col col-20'><a href='#/weekly/{{ w.year }}'>
             <i class='icon ion-android-arrow-dropright'></i></a>{{ w.year }}</div>
           <div class='col col-15 text-center'>{{ w.x7 }}{{ winX7[w.year] && winX7[w.year] != w.x7 ? '/'+winX7[w.year] : '' }}</div>
