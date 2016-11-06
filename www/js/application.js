@@ -1,4 +1,4 @@
-angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvider) {
+angular.module('app', ['ionic', 'app.util']).config(function($stateProvider, $urlRouterProvider) {
   $stateProvider.state('home', {
     url: '/home',
     templateUrl: 'views/home/home.html'
@@ -30,7 +30,8 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
     controller: 'WinnersStats'
   }).state('about', {
     url: '/about',
-    templateUrl: 'views/about/about.html'
+    templateUrl: 'views/about/about.html',
+    controller: 'About'
   });
   return $urlRouterProvider.otherwise('/home');
 }).run(function($ionicPlatform) {
@@ -817,5 +818,146 @@ angular.module('app', ['ionic']).config(function($stateProvider, $urlRouterProvi
         return d;
       });
     }
+  };
+});
+
+angular.module('app.util', []).controller('About', function($scope, $http) {
+  $scope.URL = "http://test.lotarija.mk/Results/WebService.asmx/GetDetailedReport";
+  $scope.getDraw = function(year, draw) {
+    var req;
+    req = {
+      url: $scope.URL,
+      method: 'POST',
+      data: {
+        godStr: year.toString(),
+        koloStr: draw.toString()
+      },
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
+    };
+    return $http(req).success(function(data, status) {
+      var res;
+      res = $scope.parseDraw(data.d);
+      return console.log(res);
+    }).error(function(data, status) {
+      return console.log("Error: " + status);
+    });
+  };
+  $scope.getDraw(2016, 83);
+  $scope.toYMD = function(s) {
+    var match, re;
+    re = /^(\d\d).(\d\d).(\d\d\d\d)$/;
+    match = re.exec(s);
+    if (!match) {
+      throw "toYMD(): invalid format " + s;
+    }
+    return match.slice(1, 4).reverse().join('-');
+  };
+  $scope.strip = function(s) {
+    var match, re;
+    re = /([\d.]*)/;
+    match = re.exec(s);
+    return match[1].replace(/\./g, '');
+  };
+  return $scope.parseDraw = function(text) {
+    var match, re, res, t, tab;
+    res = {};
+    re = /<th>Датум на извлекување:<\/th>\s*<td[^>]*>([^>]*)\s*<\/td>/m;
+    match = re.exec(text);
+    res.date = $scope.toYMD(match[1]);
+    re = /<p>Редослед на извлекување:\s*([\d,]+)\.?\s*<\/p>/m;
+    match = re.exec(text);
+    if (!match) {
+      throw "can't extract lotto winning column!";
+    }
+    res.lwcol = match[1].split(/\s*,\s*/).map(function(e) {
+      return parseInt(e);
+    });
+    re = /<div\s+id="joker">\s*(\d+)\s*<\/div>/m;
+    match = re.exec(text);
+    if (!match) {
+      throw "can't extract joker winning column!";
+    }
+    res.jwcol = match[1];
+    re = /<th>Уплата:<\/th>\s*<td[^>]*>([^>]*)\s*<\/td>(.*)/m;
+    match = re.exec(text);
+    if (!match) {
+      throw "can't extract lotto sales!";
+    }
+    res.lsales = parseInt($scope.strip(match[1]));
+    t = match[2];
+    re = /<th>Уплата:<\/th>\s*<td[^>]*>([^>]*)\s*<\/td>/m;
+    match = re.exec(t);
+    if (!match) {
+      throw "can't extract joker sales!";
+    }
+    res.jsales = parseInt($scope.strip(match[1]));
+    re = /<table\s+class="nl734"\s*>(.*?)<\/table>/gm;
+    tab = text.match(re);
+    if (!tab) {
+      raise("can't extract lotto winners!");
+    }
+    tab = tab[1];
+    re = /<tbody>\s*(.*?)\s*<\/tbody>/m;
+    tab = re.exec(tab);
+    re = /<tr>\s*<th>\s*(.*?)\s*<\/th>\s*<td>\s*(.*?)\s*<\/td>\s*<td>\s*(.*?)\s*<\/td>\s*<\/tr>(.*)/m;
+    match = re.exec(tab[1]);
+    while (match) {
+      switch (match[1]) {
+        case "7 погодоци":
+          res.x7 = parseInt(match[2]);
+          break;
+        case "6+1 погодоци":
+          res.x6p = parseInt(match[2]);
+          break;
+        case "6 погодоци":
+          res.x6 = parseInt(match[2]);
+          break;
+        case "5 погодоци":
+          res.x5 = parseInt(match[2]);
+          break;
+        case "4 погодоци":
+          res.x4 = parseInt(match[2]);
+      }
+      tab = match[4];
+      match = re.exec(tab);
+    }
+    re = /<table\s+class="j734"\s*>(.*?)<\/table>/gm;
+    tab = text.match(re);
+    if (!tab) {
+      raise("can't extract joker winners!");
+    }
+    tab = tab[1];
+    re = /<tbody>\s*(.*?)\s*<\/tbody>/m;
+    tab = re.exec(tab);
+    re = /<tr>\s*<th>\s*(.*?)\s*<\/th>\s*<td>\s*.*?\s*<\/td>\s*<td>\s*(.*?)\s*<\/td>\s*<td>\s*(.*?)\s*<\/td>\s*<\/tr>(.*)/m;
+    match = re.exec(tab[1]);
+    while (match) {
+      console.log(match.slice(1, 4));
+      switch (match[1]) {
+        case "6 погодоци":
+          res.jx6 = parseInt(match[2]);
+          break;
+        case "5 погодоци":
+          res.jx5 = parseInt(match[2]);
+          break;
+        case "4 погодоци":
+          res.jx4 = parseInt(match[2]);
+          break;
+        case "3 погодоци":
+          res.jx3 = parseInt(match[2]);
+          break;
+        case "2 погодоци":
+          res.jx2 = parseInt(match[2]);
+          break;
+        case "1 погодок":
+          res.jx1 = parseInt(match[2]);
+      }
+      tab = match[4];
+      match = re.exec(tab);
+    }
+    return res;
   };
 });

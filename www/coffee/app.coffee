@@ -3,50 +3,52 @@
 # angular.module is a global place for creating, registering and retrieving Angular modules
 # 'starter' is the name of this angular module example (also set in a <body> attribute in index.html)
 # the 2nd parameter is an array of 'requires'
-angular.module 'app', ['ionic']
-.config ($stateProvider, $urlRouterProvider) ->
-  $stateProvider.state 'home', {
-      url:          '/home'
-      templateUrl:  'views/home/home.html'
-    }
-    .state 'root', {
-      url:          '/'
-      templateUrl:  'views/home/home.html'
-    }
-    .state 'annual', {
-      url:          '/annual'
-      templateUrl:  'views/annual/annual.html'
-      controller:   'Annual'
-    }
-    .state 'weekly', {
-      url:          '/weekly/:year'
-      templateUrl:  'views/weekly/weekly.html'
-      controller:   'Weekly'
-    }
-    .state 'stats', {
-      url:          '/stats'
-      templateUrl:  'views/stats/home.html'
-    }
-    .state 'lotto-stats', {
-      url:          '/stats/lotto'
-      templateUrl:  'views/stats/lfreqs.html'
-      controller:   'LottoStats'
-    }
-    .state 'joker-stats', {
-      url:          '/stats/joker'
-      templateUrl:  'views/stats/jfreqs.html'
-      controller:   'JokerStats'
-    }
-    .state 'winners-stats', {
-      url:          '/stats/winners'
-      templateUrl:  'views/stats/winners.html'
-      controller:   'WinnersStats'
-    }
-    .state 'about', {
-      url:          '/about'
-      templateUrl:  'views/about/about.html'
-    }
-  $urlRouterProvider.otherwise '/home'
+angular.module 'app', ['ionic', 'app.util']
+       .config ($stateProvider, $urlRouterProvider) ->
+         $stateProvider.state 'home', {
+             url:          '/home'
+             templateUrl:  'views/home/home.html'
+           }
+           .state 'root', {
+             url:          '/'
+             templateUrl:  'views/home/home.html'
+           }
+           .state 'annual', {
+             url:          '/annual'
+             templateUrl:  'views/annual/annual.html'
+             controller:   'Annual'
+           }
+           .state 'weekly', {
+             url:          '/weekly/:year'
+             templateUrl:  'views/weekly/weekly.html'
+             controller:   'Weekly'
+           }
+           .state 'stats', {
+             url:          '/stats'
+             templateUrl:  'views/stats/home.html'
+           }
+           .state 'lotto-stats', {
+             url:          '/stats/lotto'
+             templateUrl:  'views/stats/lfreqs.html'
+             controller:   'LottoStats'
+           }
+           .state 'joker-stats', {
+             url:          '/stats/joker'
+             templateUrl:  'views/stats/jfreqs.html'
+             controller:   'JokerStats'
+           }
+           .state 'winners-stats', {
+             url:          '/stats/winners'
+             templateUrl:  'views/stats/winners.html'
+             controller:   'WinnersStats'
+           }
+           .state 'about', {
+             url:          '/about'
+             templateUrl:  'views/about/about.html'
+             controller:   'About'
+           }
+         $urlRouterProvider.otherwise '/home'
+
 .run ($ionicPlatform) ->
   $ionicPlatform.ready () ->
     if window.cordova && window.cordova.plugins.Keyboard
