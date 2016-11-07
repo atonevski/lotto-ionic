@@ -822,7 +822,9 @@ angular.module('app', ['ionic', 'app.util']).config(function($stateProvider, $ur
 });
 
 angular.module('app.util', []).controller('About', function($scope, $http) {
+  var req;
   $scope.URL = "http://test.lotarija.mk/Results/WebService.asmx/GetDetailedReport";
+  $scope.appendURL = "https://script.google.com/macros/s/AKfycbxaWBE3ePWUdQSyRRtHgJ8lxk7xX2YH-TbqQJQUvwMFEk7XTGo/exec";
   $scope.getDraw = function(year, draw) {
     var req;
     req = {
@@ -846,6 +848,24 @@ angular.module('app.util', []).controller('About', function($scope, $http) {
     });
   };
   $scope.getDraw(2016, 83);
+  req = {
+    url: $scope.appendURL,
+    method: 'POST',
+    data: {
+      draw: 83,
+      date: '2016-12-12'
+    },
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    }
+  };
+  $http(req).success(function(data, status) {
+    return console.log("Success: " + data);
+  }).error(function(data, status) {
+    return console.log("Error: " + status);
+  });
+  console.log("Should append row...");
   $scope.toYMD = function(s) {
     var match, re;
     re = /^(\d\d).(\d\d).(\d\d\d\d)$/;

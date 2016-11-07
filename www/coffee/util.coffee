@@ -2,6 +2,7 @@ angular.module 'app.util', []
 
 .controller 'About', ($scope, $http) ->
   $scope.URL = "http://test.lotarija.mk/Results/WebService.asmx/GetDetailedReport"
+  $scope.appendURL = "https://script.google.com/macros/s/AKfycbxaWBE3ePWUdQSyRRtHgJ8lxk7xX2YH-TbqQJQUvwMFEk7XTGo/exec"
   $scope.getDraw = (year, draw) ->
     req =
       url:    $scope.URL
@@ -22,6 +23,20 @@ angular.module 'app.util', []
  
   # remove this after testing
   $scope.getDraw 2016, 83
+  req =
+    url:    $scope.appendURL
+    method: 'POST'
+    data:
+      draw: 83
+      date: '2016-12-12'
+    headers:
+      'Content-Type': 'application/json'
+      'Accept':       'application/json'
+
+  $http  req
+        .success (data, status) -> console.log "Success: #{ data }"
+        .error (data, status) -> console.log "Error: #{ status }"
+  console.log "Should append row..."
   
   # dd.mm.yyyy to yyyy-mm-dd
   $scope.toYMD = (s) ->
