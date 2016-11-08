@@ -45,7 +45,7 @@ angular.module('app', ['ionic', 'app.util']).config(function($stateProvider, $ur
     }
   });
 }).controller('Main', function($scope, $http) {
-  var eval_row, query, to_json;
+  var eval_row, q, query, to_json;
   $scope.thou_sep = function(n) {
     n = n.toString();
     n = n.replace(/(\d+?)(?=(\d{3})+(\D|$))/g, '$1,');
@@ -94,7 +94,18 @@ angular.module('app', ['ionic', 'app.util']).config(function($stateProvider, $ur
   });
   $scope.width = window.innerWidth;
   $scope.height = window.innerHeight;
-  return console.log("WxH: " + window.innerWidth + "x" + window.innerHeight);
+  console.log("WxH: " + window.innerWidth + "x" + window.innerHeight);
+  q = 'SELECT A, B ORDER BY B DESC LIMIT 1';
+  return $http.get($scope.qurl(q)).success(function(data, status) {
+    var r, res;
+    res = $scope.to_json(data);
+    r = $scope.eval_row(res.table.rows[0]);
+    $scope.lastDraw = {
+      draw: r[0],
+      date: r[1]
+    };
+    return console.log($scope.lastDraw);
+  });
 }).controller('Annual', function($scope, $http, $ionicPopup, $timeout, $ionicLoading) {
   var query;
   $scope.hideChart = true;
@@ -822,10 +833,9 @@ angular.module('app', ['ionic', 'app.util']).config(function($stateProvider, $ur
 });
 
 angular.module('app.util', []).controller('About', function($scope, $http) {
-  var req;
   $scope.URL = "http://test.lotarija.mk/Results/WebService.asmx/GetDetailedReport";
-  $scope.appendURL = "https://script.google.com/macros/s/AKfycbxaWBE3ePWUdQSyRRtHgJ8lxk7xX2YH-TbqQJQUvwMFEk7XTGo/exec";
-  $scope.getDraw = function(year, draw) {
+  $scope.appendURL = "https://script.google.com/macros/s/AKfycbxn66xXetBH2YV1WI0FnvdqFPL6Jpkvx6xzmnCBGhGz-_BGFHw/exec";
+  $scope.getDraw = function(year, draw, fn) {
     var req;
     req = {
       url: $scope.URL,
@@ -842,30 +852,45 @@ angular.module('app.util', []).controller('About', function($scope, $http) {
     return $http(req).success(function(data, status) {
       var res;
       res = $scope.parseDraw(data.d);
-      return console.log(res);
+      res.draw = draw;
+      console.log(res);
+      if (fn) {
+        return fn(res);
+      }
     }).error(function(data, status) {
       return console.log("Error: " + status);
     });
   };
-  $scope.getDraw(2016, 83);
-  req = {
-    url: $scope.appendURL,
-    method: 'POST',
-    data: {
-      draw: 83,
-      date: '2016-12-12'
-    },
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json'
+  $scope.serialize = function(rec) {
+    return ("draw=" + rec.draw) + ("&date=" + rec.date) + ("&lsales=" + rec.lsales) + ("&x7=" + rec.x7 + "&x6p=" + rec.x6p + "&x6=" + rec.x6) + ("&x5=" + rec.x5 + "&x4=" + rec.x4) + ("&jsales=" + rec.jsales) + ("&jx6=" + rec.jx6 + "&jx5=" + rec.jx5 + "&jx4=" + rec.jx4) + ("&jx3=" + rec.jx3 + "&jx2=" + rec.jx2 + "&jx1=" + rec.jx1) + ("&l1=" + rec.lwcol[0] + "&l2=" + rec.lwcol[1]) + ("&l3=" + rec.lwcol[2] + "&l4=" + rec.lwcol[3]) + ("&l5=" + rec.lwcol[4] + "&l6=" + rec.lwcol[5]) + ("&l7=" + rec.lwcol[6] + "&lp=" + rec.lwcol[7]) + ("&jwcol=" + rec.jwcol);
+  };
+  $scope.nextDraw = function(d) {
+    var date;
+    if (!((d.draw != null) || (d.date != null))) {
+      throw "Not a valid draw: " + d;
+    }
+    date = (function() {
+      switch (d.date.getDay()) {
+        case 3:
+          return new Date(d.date.getTime() + 3 * 24 * 60 * 60 * 1000);
+        case 6:
+          return new Date(d.date.getTime() + 4 * 24 * 60 * 60 * 1000);
+        default:
+          throw "Invalid draw date: " + d.date;
+      }
+    })();
+    if (date.getFullYear() === d.date.getFullYear()) {
+      return {
+        draw: d.draw + 1,
+        date: date
+      };
+    } else {
+      return {
+        draw: 1,
+        date: date
+      };
     }
   };
-  $http(req).success(function(data, status) {
-    return console.log("Success: " + data);
-  }).error(function(data, status) {
-    return console.log("Error: " + status);
-  });
-  console.log("Should append row...");
   $scope.toYMD = function(s) {
     var match, re;
     re = /^(\d\d).(\d\d).(\d\d\d\d)$/;

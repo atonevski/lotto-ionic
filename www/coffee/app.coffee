@@ -108,6 +108,18 @@ angular.module 'app', ['ionic', 'app.util']
   $scope.height = window.innerHeight
   console.log "WxH: #{ window.innerWidth }x#{ window.innerHeight }"
 
+  # get last draw number & date
+  q = 'SELECT A, B ORDER BY B DESC LIMIT 1'
+  $http.get $scope.qurl(q)
+    .success (data, status) ->
+      res = $scope.to_json data
+      r = $scope.eval_row res.table.rows[0]
+      $scope.lastDraw =
+        draw: r[0]
+        date: r[1]
+      console.log $scope.lastDraw
+
+
 .controller 'Annual', ($scope, $http, $ionicPopup, $timeout, $ionicLoading) ->
   # bar chart
   $scope.hideChart = true

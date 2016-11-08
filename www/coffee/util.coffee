@@ -2,8 +2,8 @@ angular.module 'app.util', []
 
 .controller 'About', ($scope, $http) ->
   $scope.URL = "http://test.lotarija.mk/Results/WebService.asmx/GetDetailedReport"
-  $scope.appendURL = "https://script.google.com/macros/s/AKfycbxaWBE3ePWUdQSyRRtHgJ8lxk7xX2YH-TbqQJQUvwMFEk7XTGo/exec"
-  $scope.getDraw = (year, draw) ->
+  $scope.appendURL = "https://script.google.com/macros/s/AKfycbxn66xXetBH2YV1WI0FnvdqFPL6Jpkvx6xzmnCBGhGz-_BGFHw/exec"
+  $scope.getDraw = (year, draw, fn) ->
     req =
       url:    $scope.URL
       method: 'POST'
@@ -17,27 +17,52 @@ angular.module 'app.util', []
       .success (data, status) ->
         # console.log data.d
         res = $scope.parseDraw data.d
+        res.draw = draw
         console.log res
+        fn res if fn
       .error (data, status) ->
         console.log "Error: #{ status }"
  
-  # remove this after testing
-  $scope.getDraw 2016, 83
-  req =
-    url:    $scope.appendURL
-    method: 'POST'
-    data:
-      draw: 83
-      date: '2016-12-12'
-    headers:
-      'Content-Type': 'application/json'
-      'Accept':       'application/json'
+  $scope.serialize = (rec) ->
+    "draw=#{ rec.draw }" +
+    "&date=#{ rec.date }" +
+    "&lsales=#{ rec.lsales }" +
+    "&x7=#{ rec.x7 }&x6p=#{ rec.x6p }&x6=#{ rec.x6 }" +
+    "&x5=#{ rec.x5 }&x4=#{ rec.x4 }" +
+    "&jsales=#{ rec.jsales }" +
+    "&jx6=#{ rec.jx6 }&jx5=#{ rec.jx5 }&jx4=#{ rec.jx4 }" +
+    "&jx3=#{ rec.jx3 }&jx2=#{ rec.jx2 }&jx1=#{ rec.jx1 }" +
+    "&l1=#{ rec.lwcol[0] }&l2=#{ rec.lwcol[1] }" +
+    "&l3=#{ rec.lwcol[2] }&l4=#{ rec.lwcol[3] }" +
+    "&l5=#{ rec.lwcol[4] }&l6=#{ rec.lwcol[5] }" +
+    "&l7=#{ rec.lwcol[6] }&lp=#{ rec.lwcol[7] }" +
+    "&jwcol=#{ rec.jwcol }"
 
-  $http  req
-        .success (data, status) -> console.log "Success: #{ data }"
-        .error (data, status) -> console.log "Error: #{ status }"
-  console.log "Should append row..."
+  # # remove this after testing
+  # $scope.getDraw 2016, 89, (rec) ->
+  #   req =
+  #     url:    $scope.appendURL
+  #     method: 'POST'
+  #     data:    $scope.serialize rec
+  #     headers:
+  #       'Content-Type': 'application/x-www-form-urlencoded'
+  #       'Accept':       'application/json'
+  #   $http  req
+  #         .success (data, status) -> console.log "Success: #{ data }"
+  #         .error (data, status) -> console.log "Error: #{ status }, data: #{ data }"
+  # console.log "Should append row..."
   
+  $scope.nextDraw = (d) ->
+    throw "Not a valid draw: #{ d }" unless d.draw? or d.date?
+    date = switch d.date.getDay()
+              when 3 then new Date(d.date.getTime() + 3*24*60*60*1000)
+              when 6 then new Date(d.date.getTime() + 4*24*60*60*1000)
+              else throw "Invalid draw date: #{ d.date }"
+    if date.getFullYear() == d.date.getFullYear()
+      { draw: d.draw + 1, date: date }
+    else
+      { draw: 1, date: date }
+
   # dd.mm.yyyy to yyyy-mm-dd
   $scope.toYMD = (s) ->
     re = /^(\d\d).(\d\d).(\d\d\d\d)$/
