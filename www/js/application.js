@@ -48,7 +48,7 @@ angular.module('app', ['ionic', 'app.util']).config(function($stateProvider, $ur
       return StatusBar.styleDefault();
     }
   });
-}).controller('Main', function($scope, $http) {
+}).controller('Main', function($scope, $rootScope, $http) {
   var eval_row, q, query, to_json;
   $scope.thou_sep = function(n) {
     n = n.toString();
@@ -82,23 +82,24 @@ angular.module('app', ['ionic', 'app.util']).config(function($stateProvider, $ur
       }
     });
   };
-  $scope.uploadNeeded = false;
+  $rootScope.uploadNeeded = false;
   $scope.KEY = '1R5S3ZZg1ypygf_fpRoWnsYmeqnNI2ZVosQh2nJ3Aqm0';
   $scope.URL = "https://spreadsheets.google.com/";
   $scope.RE = /^([^(]+?\()(.*)\);$/g;
   $scope.to_json = to_json;
   $scope.eval_row = eval_row;
   $scope.nextDraw = function(d) {
-    var date;
+    var date, tm;
     if (!((d.draw != null) || (d.date != null))) {
       throw "Not a valid draw: " + d;
     }
+    tm = d.date.getTime() - d.date.getTimezoneOffset() * 60 * 1000;
     date = (function() {
       switch (d.date.getDay()) {
         case 3:
-          return new Date(d.date.getTime() + 3 * 24 * 60 * 60 * 1000);
+          return new Date(tm + 3 * 24 * 60 * 60 * 1000);
         case 6:
-          return new Date(d.date.getTime() + 4 * 24 * 60 * 60 * 1000);
+          return new Date(tm + 4 * 24 * 60 * 60 * 1000);
         default:
           throw "Invalid draw date: " + d.date;
       }
@@ -129,16 +130,17 @@ angular.module('app', ['ionic', 'app.util']).config(function($stateProvider, $ur
   console.log("WxH: " + window.innerWidth + "x" + window.innerHeight);
   $scope.checkUpload = function() {
     var nextd, yesterday;
-    if ($scope.lastDraw == null) {
-      $scope.uploadNeeded = false;
+    if ($rootScope.lastDraw == null) {
+      $rootScope.uploadNeeded = false;
       return false;
     }
     yesterday = (Date.parse((new Date()).toISOString().slice(0, 10))) - 1 * 24 * 60 * 60 * 1000;
-    nextd = $scope.nextDraw($scope.lastDraw);
+    nextd = $scope.nextDraw($rootScope.lastDraw);
     console.log("yesterday: " + yesterday);
     console.log("next draw date: " + nextd.date);
-    return $scope.uploadNeeded = nextd.date < yesterday;
+    return $rootScope.uploadNeeded = nextd.date < yesterday;
   };
+  $rootScope.checkUpload = $scope.checkUpload;
   q = 'SELECT A, B ORDER BY B DESC LIMIT 1';
   return $http.get($scope.qurl(q)).success(function(data, status) {
     var r, res;
@@ -148,7 +150,8 @@ angular.module('app', ['ionic', 'app.util']).config(function($stateProvider, $ur
       draw: r[0],
       date: r[1]
     };
-    $scope.checkUpload();
+    $rootScope.lastDraw = $scope.lastDraw;
+    $rootScope.checkUpload();
     console.log($scope.lastDraw);
     return console.log("Upload needed: " + $scope.uploadNeeded);
   });
@@ -878,12 +881,12 @@ angular.module('app', ['ionic', 'app.util']).config(function($stateProvider, $ur
   };
 });
 
-angular.module('app.util', []).controller('Upload', function($scope, $ionicPopup, $state, $timeout, $ionicLoading, $http) {
+angular.module('app.util', []).controller('Upload', function($scope, $rootScope, $ionicPopup, $state, $timeout, $ionicLoading, $http) {
   var popup;
   $scope.dateToDMY = function(d) {
     return (new Date(d.getTime() - d.getTimezoneOffset() * 60 * 1000)).toISOString().slice(0, 10).split('-').reverse().join('.');
   };
-  $scope.nextd = $scope.nextDraw($scope.lastDraw);
+  $scope.nextd = $scope.nextDraw($rootScope.lastDraw);
   $scope.URL = "http://test.lotarija.mk/Results/" + "WebService.asmx/GetDetailedReport";
   $scope.appendURL = "https://script.google.com/macros/s/" + "AKfycbxn66xXetBH2YV1WI0FnvdqFPL6Jpkvx6xzmnCBGhGz-_BGFHw/exec";
   $scope.getDraw = function(year, draw, fn) {
@@ -1004,7 +1007,6 @@ angular.module('app.util', []).controller('Upload', function($scope, $ionicPopup
     re = /<tr>\s*<th>\s*(.*?)\s*<\/th>\s*<td>\s*.*?\s*<\/td>\s*<td>\s*(.*?)\s*<\/td>\s*<td>\s*(.*?)\s*<\/td>\s*<\/tr>(.*)/m;
     match = re.exec(tab[1]);
     while (match) {
-      console.log(match.slice(1, 4));
       switch (match[1]) {
         case "6 погодоци":
           res.jx6 = parseInt(match[2]);
@@ -1059,6 +1061,12 @@ angular.module('app.util', []).controller('Upload', function($scope, $ionicPopup
         return $http(req).success(function(data, status) {
           console.log("Success: " + data);
           $ionicLoading.hide();
+          $rootScope.lastDraw = $scope.nextd;
+          $rootScope.uploadNeeded = $rootScope.checkUpload();
+          $rootScope.$apply;
+          console.log("Root scope");
+          console.log("last draw: ", $rootScope.lastDraw);
+          console.log("upload needed: ", $rootScope.uploadNeeded);
           return $state.go('home');
         }).error(function(err) {
           console.log("Error: " + err);
@@ -1073,177 +1081,4 @@ angular.module('app.util', []).controller('Upload', function($scope, $ionicPopup
       return $state.go('home');
     }
   });
-}).controller('About', function($scope, $http) {
-  $scope.URL = "http://test.lotarija.mk/Results/" + "WebService.asmx/GetDetailedReport";
-  $scope.appendURL = "https://script.google.com/macros/s/" + "AKfycbxn66xXetBH2YV1WI0FnvdqFPL6Jpkvx6xzmnCBGhGz-_BGFHw/exec";
-  $scope.getDraw = function(year, draw, fn) {
-    var req;
-    req = {
-      url: $scope.URL,
-      method: 'POST',
-      data: {
-        godStr: year.toString(),
-        koloStr: draw.toString()
-      },
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      }
-    };
-    return $http(req).success(function(data, status) {
-      var res;
-      res = $scope.parseDraw(data.d);
-      res.draw = draw;
-      console.log(res);
-      if (fn) {
-        return fn(res);
-      }
-    }).error(function(data, status) {
-      return console.log("Error: " + status);
-    });
-  };
-  $scope.serialize = function(rec) {
-    return ("draw=" + rec.draw) + ("&date=" + rec.date) + ("&lsales=" + rec.lsales) + ("&x7=" + rec.x7 + "&x6p=" + rec.x6p + "&x6=" + rec.x6) + ("&x5=" + rec.x5 + "&x4=" + rec.x4) + ("&jsales=" + rec.jsales) + ("&jx6=" + rec.jx6 + "&jx5=" + rec.jx5 + "&jx4=" + rec.jx4) + ("&jx3=" + rec.jx3 + "&jx2=" + rec.jx2 + "&jx1=" + rec.jx1) + ("&l1=" + rec.lwcol[0] + "&l2=" + rec.lwcol[1]) + ("&l3=" + rec.lwcol[2] + "&l4=" + rec.lwcol[3]) + ("&l5=" + rec.lwcol[4] + "&l6=" + rec.lwcol[5]) + ("&l7=" + rec.lwcol[6] + "&lp=" + rec.lwcol[7]) + ("&jwcol=" + rec.jwcol);
-  };
-  $scope.nextDraw = function(d) {
-    var date;
-    if (!((d.draw != null) || (d.date != null))) {
-      throw "Not a valid draw: " + d;
-    }
-    date = (function() {
-      switch (d.date.getDay()) {
-        case 3:
-          return new Date(d.date.getTime() + 3 * 24 * 60 * 60 * 1000);
-        case 6:
-          return new Date(d.date.getTime() + 4 * 24 * 60 * 60 * 1000);
-        default:
-          throw "Invalid draw date: " + d.date;
-      }
-    })();
-    if (date.getFullYear() === d.date.getFullYear()) {
-      return {
-        draw: d.draw + 1,
-        date: date
-      };
-    } else {
-      return {
-        draw: 1,
-        date: date
-      };
-    }
-  };
-  $scope.toYMD = function(s) {
-    var match, re;
-    re = /^(\d\d).(\d\d).(\d\d\d\d)$/;
-    match = re.exec(s);
-    if (!match) {
-      throw "toYMD(): invalid format " + s;
-    }
-    return match.slice(1, 4).reverse().join('-');
-  };
-  $scope.strip = function(s) {
-    var match, re;
-    re = /([\d.]*)/;
-    match = re.exec(s);
-    return match[1].replace(/\./g, '');
-  };
-  return $scope.parseDraw = function(text) {
-    var match, re, res, t, tab;
-    res = {};
-    re = /<th>Датум на извлекување:<\/th>\s*<td[^>]*>([^>]*)\s*<\/td>/m;
-    match = re.exec(text);
-    res.date = $scope.toYMD(match[1]);
-    re = /<p>Редослед на извлекување:\s*([\d,]+)\.?\s*<\/p>/m;
-    match = re.exec(text);
-    if (!match) {
-      throw "can't extract lotto winning column!";
-    }
-    res.lwcol = match[1].split(/\s*,\s*/).map(function(e) {
-      return parseInt(e);
-    });
-    re = /<div\s+id="joker">\s*(\d+)\s*<\/div>/m;
-    match = re.exec(text);
-    if (!match) {
-      throw "can't extract joker winning column!";
-    }
-    res.jwcol = match[1];
-    re = /<th>Уплата:<\/th>\s*<td[^>]*>([^>]*)\s*<\/td>(.*)/m;
-    match = re.exec(text);
-    if (!match) {
-      throw "can't extract lotto sales!";
-    }
-    res.lsales = parseInt($scope.strip(match[1]));
-    t = match[2];
-    re = /<th>Уплата:<\/th>\s*<td[^>]*>([^>]*)\s*<\/td>/m;
-    match = re.exec(t);
-    if (!match) {
-      throw "can't extract joker sales!";
-    }
-    res.jsales = parseInt($scope.strip(match[1]));
-    re = /<table\s+class="nl734"\s*>(.*?)<\/table>/gm;
-    tab = text.match(re);
-    if (!tab) {
-      raise("can't extract lotto winners!");
-    }
-    tab = tab[1];
-    re = /<tbody>\s*(.*?)\s*<\/tbody>/m;
-    tab = re.exec(tab);
-    re = /<tr>\s*<th>\s*(.*?)\s*<\/th>\s*<td>\s*(.*?)\s*<\/td>\s*<td>\s*(.*?)\s*<\/td>\s*<\/tr>(.*)/m;
-    match = re.exec(tab[1]);
-    while (match) {
-      switch (match[1]) {
-        case "7 погодоци":
-          res.x7 = parseInt(match[2]);
-          break;
-        case "6+1 погодоци":
-          res.x6p = parseInt(match[2]);
-          break;
-        case "6 погодоци":
-          res.x6 = parseInt(match[2]);
-          break;
-        case "5 погодоци":
-          res.x5 = parseInt(match[2]);
-          break;
-        case "4 погодоци":
-          res.x4 = parseInt(match[2]);
-      }
-      tab = match[4];
-      match = re.exec(tab);
-    }
-    re = /<table\s+class="j734"\s*>(.*?)<\/table>/gm;
-    tab = text.match(re);
-    if (!tab) {
-      raise("can't extract joker winners!");
-    }
-    tab = tab[1];
-    re = /<tbody>\s*(.*?)\s*<\/tbody>/m;
-    tab = re.exec(tab);
-    re = /<tr>\s*<th>\s*(.*?)\s*<\/th>\s*<td>\s*.*?\s*<\/td>\s*<td>\s*(.*?)\s*<\/td>\s*<td>\s*(.*?)\s*<\/td>\s*<\/tr>(.*)/m;
-    match = re.exec(tab[1]);
-    while (match) {
-      console.log(match.slice(1, 4));
-      switch (match[1]) {
-        case "6 погодоци":
-          res.jx6 = parseInt(match[2]);
-          break;
-        case "5 погодоци":
-          res.jx5 = parseInt(match[2]);
-          break;
-        case "4 погодоци":
-          res.jx4 = parseInt(match[2]);
-          break;
-        case "3 погодоци":
-          res.jx3 = parseInt(match[2]);
-          break;
-        case "2 погодоци":
-          res.jx2 = parseInt(match[2]);
-          break;
-        case "1 погодок":
-          res.jx1 = parseInt(match[2]);
-      }
-      tab = match[4];
-      match = re.exec(tab);
-    }
-    return res;
-  };
-});
+}).controller('About', function($scope, $http) {});
