@@ -1,3 +1,6 @@
+/* default font  */
+* { font-family: 'Open Sans'; }
+
 /* Empty. Add your own CSS if you like */
 .item-annual, .item-weekly, .item-stats { 
   padding-top: 2px;  
@@ -76,6 +79,7 @@ div.tooltip {
   stroke-width: 1.8px;
 }
 
+/* bubble styles */
 .bubble{
     background-color: #f7faa0;
     color: black;
@@ -151,4 +155,9 @@ dl.dl-horizontal dd {
   vertical-align: middle;
   text-align: left;
   padding-left: 4px;
+}
+
+/* upload popup style */
+.upload {
+  font-family: 'Open Sans';
 }

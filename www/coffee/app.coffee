@@ -42,6 +42,11 @@ angular.module 'app', ['ionic', 'app.util']
              templateUrl:  'views/stats/winners.html'
              controller:   'WinnersStats'
            }
+           .state 'upload', {
+             url:          '/upload'
+             templateUrl:  'views/upload/upload.html'
+             controller:   'Upload'
+           }
            .state 'about', {
              url:          '/about'
              templateUrl:  'views/about/about.html'
@@ -89,12 +94,27 @@ angular.module 'app', ['ionic', 'app.util']
                           eval c.v
                       else
                         c.v
-
+  # some global vars
+  $scope.uploadNeeded = no
   $scope.KEY ='1R5S3ZZg1ypygf_fpRoWnsYmeqnNI2ZVosQh2nJ3Aqm0'
   $scope.URL = "https://spreadsheets.google.com/"
   $scope.RE  =  /^([^(]+?\()(.*)\);$/g
   $scope.to_json  = to_json
   $scope.eval_row = eval_row
+
+  # calc next draw for given d
+  $scope.nextDraw = (d) ->
+    throw "Not a valid draw: #{ d }" unless d.draw? or d.date?
+    date = switch d.date.getDay()
+              when 3 then new Date(d.date.getTime() + 3*24*60*60*1000)
+              when 6 then new Date(d.date.getTime() + 4*24*60*60*1000)
+              else throw "Invalid draw date: #{ d.date }"
+    if date.getFullYear() == d.date.getFullYear()
+      { draw: d.draw + 1, date: date }
+    else
+      { draw: 1, date: date }
+
+  # get last year
   $scope.qurl = (q) -> "#{ $scope.URL }tq?tqx=out:json&key=#{ $scope.KEY }" +
                 "&tq=#{ encodeURI q }"
   query = 'SELECT YEAR(B) ORDER BY YEAR(B) DESC LIMIT 1'
@@ -108,6 +128,17 @@ angular.module 'app', ['ionic', 'app.util']
   $scope.height = window.innerHeight
   console.log "WxH: #{ window.innerWidth }x#{ window.innerHeight }"
 
+  # check for upload
+  $scope.checkUpload = () ->
+    unless $scope.lastDraw?
+      $scope.uploadNeeded = no # since we can't know 
+      return no
+    yesterday = (Date.parse((new Date()).toISOString()[0..9])) - 1*24*60*60*1000
+    nextd = $scope.nextDraw $scope.lastDraw
+    console.log "yesterday: #{ yesterday }"
+    console.log "next draw date: #{ nextd.date }"
+    $scope.uploadNeeded = (nextd.date < yesterday)
+
   # get last draw number & date
   q = 'SELECT A, B ORDER BY B DESC LIMIT 1'
   $http.get $scope.qurl(q)
@@ -117,7 +148,9 @@ angular.module 'app', ['ionic', 'app.util']
       $scope.lastDraw =
         draw: r[0]
         date: r[1]
+      $scope.checkUpload()
       console.log $scope.lastDraw
+      console.log "Upload needed: #{ $scope.uploadNeeded }"
 
 
 .controller 'Annual', ($scope, $http, $ionicPopup, $timeout, $ionicLoading) ->
