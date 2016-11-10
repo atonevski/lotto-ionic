@@ -69,7 +69,7 @@ angular.module 'app', ['ionic', 'app.util']
     if window.StatusBar
       StatusBar.styleDefault()
 
-.controller 'Main', ($scope, $rootScope, $http) ->
+.controller 'Main', ($scope, $http) ->
   $scope.thou_sep = (n) ->
     n = n.toString()
     n = n.replace /(\d+?)(?=(\d{3})+(\D|$))/g, '$1,'
@@ -96,7 +96,7 @@ angular.module 'app', ['ionic', 'app.util']
                         c.v
   # some global vars
   # $scope.uploadNeeded = no
-  $rootScope.uploadNeeded = no
+  $scope.uploadNeeded = no
   $scope.KEY ='1R5S3ZZg1ypygf_fpRoWnsYmeqnNI2ZVosQh2nJ3Aqm0'
   $scope.URL = "https://spreadsheets.google.com/"
   $scope.RE  =  /^([^(]+?\()(.*)\);$/g
@@ -106,11 +106,11 @@ angular.module 'app', ['ionic', 'app.util']
   # calc next draw for given d
   $scope.nextDraw = (d) ->
     throw "Not a valid draw: #{ d }" unless d.draw? or d.date?
-    tm = d.date.getTime() - d.date.getTimezoneOffset()*60*1000
-    date = switch d.date.getDay()
-              when 3 then new Date(tm + 3*24*60*60*1000)
-              when 6 then new Date(tm + 4*24*60*60*1000)
-              else throw "Invalid draw date: #{ d.date }"
+    date = d.date
+    switch date.getDay()
+      when 3 then date.setDate(date.getDate() + 3)
+      when 6 then date.setDate(date.getDate() + 4)
+      else throw "Invalid draw date: #{ d.date }"
     if date.getFullYear() == d.date.getFullYear()
       { draw: d.draw + 1, date: date }
     else
@@ -132,16 +132,26 @@ angular.module 'app', ['ionic', 'app.util']
 
   # check for upload
   $scope.checkUpload = () ->
-    unless $rootScope.lastDraw?
+    unless $scope.lastDraw?
       # $scope.uploadNeeded = no # since we can't know 
-      $rootScope.uploadNeeded = no # since we can't know 
+      $scope.uploadNeeded = no # since we can't know 
       return no
-    yesterday = (Date.parse((new Date()).toISOString()[0..9])) - 1*24*60*60*1000
-    nextd = $scope.nextDraw $rootScope.lastDraw
+    yesterday = new Date
+    yesterday.setDate(yesterday.getDate() - 1)
+    nextd = $scope.nextDraw $scope.lastDraw
+    console.log "ld: ", $scope.lastDraw
     console.log "yesterday: #{ yesterday }"
     console.log "next draw date: #{ nextd.date }"
-    $rootScope.uploadNeeded = (nextd.date < yesterday)
-  $rootScope.checkUpload = $scope.checkUpload
+    console.log nextd
+    console.log "last draw on: #{ $scope.lastDraw.date }"
+    $scope.uploadNeeded = (nextd.date <= yesterday)
+  
+  # 
+  # we watch on lastDraw
+  $scope.$watch 'lastDraw', (n, o) ->
+    console.log "last draw changed:"
+    console.log "from: ", o
+    console.log "to: ", n
 
   # get last draw number & date
   q = 'SELECT A, B ORDER BY B DESC LIMIT 1'
@@ -151,9 +161,10 @@ angular.module 'app', ['ionic', 'app.util']
       r = $scope.eval_row res.table.rows[0]
       $scope.lastDraw =
         draw: r[0]
-        date: r[1]
-      $rootScope.lastDraw = $scope.lastDraw
-      $rootScope.checkUpload()
+        date: new Date r[1]
+      console.log r
+      console.log $scope.lastDraw
+      $scope.checkUpload()
       console.log $scope.lastDraw
       console.log "Upload needed: #{ $scope.uploadNeeded }"
 

@@ -8,11 +8,11 @@ angular.module 'app.util', []
 .controller 'Upload', ($scope, $rootScope, $ionicPopup, $state, $timeout, $ionicLoading, $http) ->
   # handy fn: date to dd.mm.yyyy string
   $scope.dateToDMY = (d) ->
-   (new Date(d.getTime() - d.getTimezoneOffset()*60*1000))
-    .toISOString()[0..9].split('-').reverse().join('.')
+    d.toISOString()[0..9].split('-').reverse().join('.')
 
   # scope var: next draw
-  $scope.nextd = $scope.nextDraw $rootScope.lastDraw
+  $scope.nextd = $scope.nextDraw $scope.lastDraw
+  console.log "next draw date: #{ $scope.dateToDMY $scope.nextd.date }"
  
   $scope.URL = "http://test.lotarija.mk/Results/" +
               "WebService.asmx/GetDetailedReport"
