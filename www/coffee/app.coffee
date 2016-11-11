@@ -69,7 +69,7 @@ angular.module 'app', ['ionic', 'app.util']
     if window.StatusBar
       StatusBar.styleDefault()
 
-.controller 'Main', ($scope, $http) ->
+.controller 'Main', ($scope, $rootScope, $http) ->
   $scope.thou_sep = (n) ->
     n = n.toString()
     n = n.replace /(\d+?)(?=(\d{3})+(\D|$))/g, '$1,'
@@ -95,18 +95,18 @@ angular.module 'app', ['ionic', 'app.util']
                       else
                         c.v
   # some global vars
-  # $scope.uploadNeeded = no
   $scope.uploadNeeded = no
-  $scope.KEY ='1R5S3ZZg1ypygf_fpRoWnsYmeqnNI2ZVosQh2nJ3Aqm0'
-  $scope.URL = "https://spreadsheets.google.com/"
-  $scope.RE  =  /^([^(]+?\()(.*)\);$/g
+  $scope.KEY      ='1R5S3ZZg1ypygf_fpRoWnsYmeqnNI2ZVosQh2nJ3Aqm0'
+  $scope.URL      = "https://spreadsheets.google.com/"
+  $scope.RE       =  /^([^(]+?\()(.*)\);$/g
   $scope.to_json  = to_json
   $scope.eval_row = eval_row
 
   # calc next draw for given d
   $scope.nextDraw = (d) ->
+    throw "nextDraw(); argument error" unless d
     throw "Not a valid draw: #{ d }" unless d.draw? or d.date?
-    date = d.date
+    date = new Date d.date
     switch date.getDay()
       when 3 then date.setDate(date.getDate() + 3)
       when 6 then date.setDate(date.getDate() + 4)
@@ -138,20 +138,19 @@ angular.module 'app', ['ionic', 'app.util']
       return no
     yesterday = new Date
     yesterday.setDate(yesterday.getDate() - 1)
+    yesterday.setHours 0
+    yesterday.setMinutes 0
+    yesterday.setSeconds 0
     nextd = $scope.nextDraw $scope.lastDraw
-    console.log "ld: ", $scope.lastDraw
-    console.log "yesterday: #{ yesterday }"
-    console.log "next draw date: #{ nextd.date }"
-    console.log nextd
-    console.log "last draw on: #{ $scope.lastDraw.date }"
     $scope.uploadNeeded = (nextd.date <= yesterday)
   
-  # 
   # we watch on lastDraw
-  $scope.$watch 'lastDraw', (n, o) ->
-    console.log "last draw changed:"
-    console.log "from: ", o
-    console.log "to: ", n
+  $rootScope.$watch 'lastDraw', (n, o) -> # old and new values
+    if n
+      if $rootScope.uploadNeeded?
+        $scope.uploadNeeded = $rootScope.uploadNeeded
+      else
+        $scope.checkUpload()
 
   # get last draw number & date
   q = 'SELECT A, B ORDER BY B DESC LIMIT 1'
@@ -162,12 +161,10 @@ angular.module 'app', ['ionic', 'app.util']
       $scope.lastDraw =
         draw: r[0]
         date: new Date r[1]
-      console.log r
-      console.log $scope.lastDraw
+      $rootScope.lastDraw =
+        draw: r[0]
+        date: new Date r[1]
       $scope.checkUpload()
-      console.log $scope.lastDraw
-      console.log "Upload needed: #{ $scope.uploadNeeded }"
-
 
 .controller 'Annual', ($scope, $http, $ionicPopup, $timeout, $ionicLoading) ->
   # bar chart

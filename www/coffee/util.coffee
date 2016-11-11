@@ -1,18 +1,17 @@
 angular.module 'app.util', []
 # TODO:
-# - use $rootScope
-# - $scope.lastDraw, $scope.uploadNeeded must be updated before
-#   returning to home state
-# - maybe should use lastDraw = nextd, and call checkUpload
+# - create factory for util functions like, thou_sep, nextDraw, etc.
+# - consider using factory for storing lastDraw, uploadNeeded, etc.
 #
 .controller 'Upload', ($scope, $rootScope, $ionicPopup, $state, $timeout, $ionicLoading, $http) ->
   # handy fn: date to dd.mm.yyyy string
   $scope.dateToDMY = (d) ->
-    d.toISOString()[0..9].split('-').reverse().join('.')
+    a = d.toLocaleDateString('en', { year: 'numeric', month: '2-digit', day: '2-digit'}).split('/')
+    "#{ a[1] }.#{ a[0] }.#{ a[2] }"
 
   # scope var: next draw
-  $scope.nextd = $scope.nextDraw $scope.lastDraw
-  console.log "next draw date: #{ $scope.dateToDMY $scope.nextd.date }"
+  $scope.nextd = $scope.nextDraw $rootScope.lastDraw
+  console.log "Upload: next draw date: #{ $scope.dateToDMY $scope.nextd.date }"
  
   $scope.URL = "http://test.lotarija.mk/Results/" +
               "WebService.asmx/GetDetailedReport"
@@ -184,11 +183,16 @@ angular.module 'app.util', []
                 console.log "Success: #{ data }"
                 $ionicLoading.hide()
                 $rootScope.lastDraw = $scope.nextd
-                $rootScope.uploadNeeded = $rootScope.checkUpload()
+                nd = $scope.nextDraw $scope.nextd
+                yesterday = new Date
+                yesterday.setDate yesterday.getDate() - 1
+                yesterday.setHours 0
+                yesterday.setMinutes 0
+                yesterday.setSeconds 0
+
+                $rootScope.uploadNeeded = nd.date <= yesterday
+                console.log "Comparing: ", nd.date, " with: ", yesterday
                 $rootScope.$apply
-                console.log "Root scope"
-                console.log "last draw: ", $rootScope.lastDraw
-                console.log "upload needed: ", $rootScope.uploadNeeded
                 $state.go 'home'
               .error (err) ->
                 console.log "Error: #{ err }"

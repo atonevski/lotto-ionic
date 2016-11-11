@@ -48,7 +48,7 @@ angular.module('app', ['ionic', 'app.util']).config(function($stateProvider, $ur
       return StatusBar.styleDefault();
     }
   });
-}).controller('Main', function($scope, $http) {
+}).controller('Main', function($scope, $rootScope, $http) {
   var eval_row, q, query, to_json;
   $scope.thou_sep = function(n) {
     n = n.toString();
@@ -90,10 +90,13 @@ angular.module('app', ['ionic', 'app.util']).config(function($stateProvider, $ur
   $scope.eval_row = eval_row;
   $scope.nextDraw = function(d) {
     var date;
+    if (!d) {
+      throw "nextDraw(); argument error";
+    }
     if (!((d.draw != null) || (d.date != null))) {
       throw "Not a valid draw: " + d;
     }
-    date = d.date;
+    date = new Date(d.date);
     switch (date.getDay()) {
       case 3:
         date.setDate(date.getDate() + 3);
@@ -136,18 +139,20 @@ angular.module('app', ['ionic', 'app.util']).config(function($stateProvider, $ur
     }
     yesterday = new Date;
     yesterday.setDate(yesterday.getDate() - 1);
+    yesterday.setHours(0);
+    yesterday.setMinutes(0);
+    yesterday.setSeconds(0);
     nextd = $scope.nextDraw($scope.lastDraw);
-    console.log("ld: ", $scope.lastDraw);
-    console.log("yesterday: " + yesterday);
-    console.log("next draw date: " + nextd.date);
-    console.log(nextd);
-    console.log("last draw on: " + $scope.lastDraw.date);
     return $scope.uploadNeeded = nextd.date <= yesterday;
   };
-  $scope.$watch('lastDraw', function(n, o) {
-    console.log("last draw changed:");
-    console.log("from: ", o);
-    return console.log("to: ", n);
+  $rootScope.$watch('lastDraw', function(n, o) {
+    if (n) {
+      if ($rootScope.uploadNeeded != null) {
+        return $scope.uploadNeeded = $rootScope.uploadNeeded;
+      } else {
+        return $scope.checkUpload();
+      }
+    }
   });
   q = 'SELECT A, B ORDER BY B DESC LIMIT 1';
   return $http.get($scope.qurl(q)).success(function(data, status) {
@@ -158,11 +163,11 @@ angular.module('app', ['ionic', 'app.util']).config(function($stateProvider, $ur
       draw: r[0],
       date: new Date(r[1])
     };
-    console.log(r);
-    console.log($scope.lastDraw);
-    $scope.checkUpload();
-    console.log($scope.lastDraw);
-    return console.log("Upload needed: " + $scope.uploadNeeded);
+    $rootScope.lastDraw = {
+      draw: r[0],
+      date: new Date(r[1])
+    };
+    return $scope.checkUpload();
   });
 }).controller('Annual', function($scope, $http, $ionicPopup, $timeout, $ionicLoading) {
   var query;
@@ -893,10 +898,16 @@ angular.module('app', ['ionic', 'app.util']).config(function($stateProvider, $ur
 angular.module('app.util', []).controller('Upload', function($scope, $rootScope, $ionicPopup, $state, $timeout, $ionicLoading, $http) {
   var popup;
   $scope.dateToDMY = function(d) {
-    return d.toISOString().slice(0, 10).split('-').reverse().join('.');
+    var a;
+    a = d.toLocaleDateString('en', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).split('/');
+    return a[1] + "." + a[0] + "." + a[2];
   };
-  $scope.nextd = $scope.nextDraw($scope.lastDraw);
-  console.log("next draw date: " + ($scope.dateToDMY($scope.nextd.date)));
+  $scope.nextd = $scope.nextDraw($rootScope.lastDraw);
+  console.log("Upload: next draw date: " + ($scope.dateToDMY($scope.nextd.date)));
   $scope.URL = "http://test.lotarija.mk/Results/" + "WebService.asmx/GetDetailedReport";
   $scope.appendURL = "https://script.google.com/macros/s/" + "AKfycbxn66xXetBH2YV1WI0FnvdqFPL6Jpkvx6xzmnCBGhGz-_BGFHw/exec";
   $scope.getDraw = function(year, draw, fn) {
@@ -1069,14 +1080,19 @@ angular.module('app.util', []).controller('Upload', function($scope, $rootScope,
           }
         };
         return $http(req).success(function(data, status) {
+          var nd, yesterday;
           console.log("Success: " + data);
           $ionicLoading.hide();
           $rootScope.lastDraw = $scope.nextd;
-          $rootScope.uploadNeeded = $rootScope.checkUpload();
+          nd = $scope.nextDraw($scope.nextd);
+          yesterday = new Date;
+          yesterday.setDate(yesterday.getDate() - 1);
+          yesterday.setHours(0);
+          yesterday.setMinutes(0);
+          yesterday.setSeconds(0);
+          $rootScope.uploadNeeded = nd.date <= yesterday;
+          console.log("Comparing: ", nd.date, " with: ", yesterday);
           $rootScope.$apply;
-          console.log("Root scope");
-          console.log("last draw: ", $rootScope.lastDraw);
-          console.log("upload needed: ", $rootScope.uploadNeeded);
           return $state.go('home');
         }).error(function(err) {
           console.log("Error: " + err);
