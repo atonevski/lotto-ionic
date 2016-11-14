@@ -48,79 +48,25 @@ angular.module('app', ['ionic', 'app.util']).config(function($stateProvider, $ur
       return StatusBar.styleDefault();
     }
   });
-}).controller('Main', function($scope, $rootScope, $http) {
-  var eval_row, q, query, to_json;
-  $scope.thou_sep = function(n) {
-    n = n.toString();
-    n = n.replace(/(\d+?)(?=(\d{3})+(\D|$))/g, '$1,');
-    if (!(arguments.length > 1)) {
-      return n;
-    }
-    if (arguments[1] === 'mk') {
-      n = n.replace(/\./g, ';');
-      n = n.replace(/,/g, '.');
-      n = n.replace(/;/g, ',');
-    }
-    return n;
-  };
+}).controller('Main', function($scope, $rootScope, $http, util) {
+  var q, query, to_json;
+  $scope.thou_sep = util.thou_sep;
   to_json = function(d) {
     var match, re;
     re = /^([^(]+?\()(.*)\);$/g;
     match = re.exec(d);
     return JSON.parse(match[2]);
   };
-  eval_row = function(r) {
-    return r.c.map(function(c) {
-      if (c.f != null) {
-        if (typeof c.v === 'string' && c.v.match(/^Date/)) {
-          return eval('new ' + c.v);
-        } else {
-          return eval(c.v);
-        }
-      } else {
-        return c.v;
-      }
-    });
-  };
-  $scope.uploadNeeded = false;
-  $scope.KEY = '1R5S3ZZg1ypygf_fpRoWnsYmeqnNI2ZVosQh2nJ3Aqm0';
-  $scope.URL = "https://spreadsheets.google.com/";
-  $scope.RE = /^([^(]+?\()(.*)\);$/g;
   $scope.to_json = to_json;
-  $scope.eval_row = eval_row;
-  $scope.nextDraw = function(d) {
-    var date;
-    if (!d) {
-      throw "nextDraw(); argument error";
-    }
-    if (!((d.draw != null) || (d.date != null))) {
-      throw "Not a valid draw: " + d;
-    }
-    date = new Date(d.date);
-    switch (date.getDay()) {
-      case 3:
-        date.setDate(date.getDate() + 3);
-        break;
-      case 6:
-        date.setDate(date.getDate() + 4);
-        break;
-      default:
-        throw "Invalid draw date: " + d.date;
-    }
-    if (date.getFullYear() === d.date.getFullYear()) {
-      return {
-        draw: d.draw + 1,
-        date: date
-      };
-    } else {
-      return {
-        draw: 1,
-        date: date
-      };
-    }
-  };
+  $scope.uploadNeeded = false;
+  $scope.GS_KEY = util.GS_KEY;
+  $scope.GS_URL = util.GS_URL;
+  $scope.RES_RE = util.RES_RE;
+  $scope.eval_row = util.eval_row;
+  $scope.yesterday = util.yesterday;
+  $scope.nextDraw = util.nextDraw;
   $scope.qurl = function(q) {
-    return ($scope.URL + "tq?tqx=out:json&key=" + $scope.KEY) + ("&tq=" + (encodeURI(q)));
+    return ($scope.GS_URL + "tq?tqx=out:json&key=" + $scope.GS_KEY) + ("&tq=" + (encodeURI(q)));
   };
   query = 'SELECT YEAR(B) ORDER BY YEAR(B) DESC LIMIT 1';
   $http.get($scope.qurl(query)).success(function(data, status) {
@@ -132,18 +78,13 @@ angular.module('app', ['ionic', 'app.util']).config(function($stateProvider, $ur
   $scope.height = window.innerHeight;
   console.log("WxH: " + window.innerWidth + "x" + window.innerHeight);
   $scope.checkUpload = function() {
-    var nextd, yesterday;
+    var nextd;
     if ($scope.lastDraw == null) {
       $scope.uploadNeeded = false;
       return false;
     }
-    yesterday = new Date;
-    yesterday.setDate(yesterday.getDate() - 1);
-    yesterday.setHours(0);
-    yesterday.setMinutes(0);
-    yesterday.setSeconds(0);
     nextd = $scope.nextDraw($scope.lastDraw);
-    return $scope.uploadNeeded = nextd.date <= yesterday;
+    return $scope.uploadNeeded = nextd.date <= $scope.yesterday();
   };
   $rootScope.$watch('lastDraw', function(n, o) {
     if (n) {
@@ -1085,11 +1026,7 @@ angular.module('app.util', []).controller('Upload', function($scope, $rootScope,
           $ionicLoading.hide();
           $rootScope.lastDraw = $scope.nextd;
           nd = $scope.nextDraw($scope.nextd);
-          yesterday = new Date;
-          yesterday.setDate(yesterday.getDate() - 1);
-          yesterday.setHours(0);
-          yesterday.setMinutes(0);
-          yesterday.setSeconds(0);
+          yesterday = $scope.yesterday();
           $rootScope.uploadNeeded = nd.date <= yesterday;
           console.log("Comparing: ", nd.date, " with: ", yesterday);
           $rootScope.$apply;
@@ -1108,3 +1045,81 @@ angular.module('app.util', []).controller('Upload', function($scope, $rootScope,
     }
   });
 }).controller('About', function($scope, $http) {});
+
+angular.module('app.util').factory('util', function() {
+  var GS_KEY, GS_URL, RES_RE, fac;
+  GS_KEY = '1R5S3ZZg1ypygf_fpRoWnsYmeqnNI2ZVosQh2nJ3Aqm0';
+  GS_URL = "https://spreadsheets.google.com/";
+  RES_RE = /^([^(]+?\()(.*)\);$/g;
+  return fac = {
+    GS_KEY: GS_KEY,
+    GS_URL: GS_URL,
+    RES_RE: RES_RE,
+    thou_sep: function(n) {
+      n = n.toString();
+      n = n.replace(/(\d+?)(?=(\d{3})+(\D|$))/g, '$1,');
+      if (!(arguments.length > 1)) {
+        return n;
+      }
+      if (arguments[1] === 'mk') {
+        n = n.replace(/\./g, ';');
+        n = n.replace(/,/g, '.');
+        n = n.replace(/;/g, ',');
+      }
+      return n;
+    },
+    eval_row: function(r) {
+      return r.c.map(function(c) {
+        if (c.f != null) {
+          if (typeof c.v === 'string' && c.v.match(/^Date/)) {
+            return eval('new ' + c.v);
+          } else {
+            return eval(c.v);
+          }
+        } else {
+          return c.v;
+        }
+      });
+    },
+    yesterday: function() {
+      var y;
+      y = new Date;
+      y.setDate(y.getDate() - 1);
+      y.setHours(0);
+      y.setMinutes(0);
+      y.setSeconds(0);
+      return y;
+    },
+    nextDraw: function(d) {
+      var date;
+      if (!d) {
+        throw "nextDraw(); argument error";
+      }
+      if (!((d.draw != null) || (d.date != null))) {
+        throw "Not a valid draw: " + d;
+      }
+      date = new Date(d.date);
+      switch (date.getDay()) {
+        case 3:
+          date.setDate(date.getDate() + 3);
+          break;
+        case 6:
+          date.setDate(date.getDate() + 4);
+          break;
+        default:
+          throw "Invalid draw date: " + d.date;
+      }
+      if (date.getFullYear() === d.date.getFullYear()) {
+        return {
+          draw: d.draw + 1,
+          date: date
+        };
+      } else {
+        return {
+          draw: 1,
+          date: date
+        };
+      }
+    }
+  };
+});

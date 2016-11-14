@@ -69,55 +69,26 @@ angular.module 'app', ['ionic', 'app.util']
     if window.StatusBar
       StatusBar.styleDefault()
 
-.controller 'Main', ($scope, $rootScope, $http) ->
-  $scope.thou_sep = (n) ->
-    n = n.toString()
-    n = n.replace /(\d+?)(?=(\d{3})+(\D|$))/g, '$1,'
-    return n unless arguments.length > 1
-    if arguments[1] is 'mk'
-      n = n.replace /\./g, ';'
-      n = n.replace /,/g, '.'
-      n = n.replace /;/g, ','
-    n # return this value
+.controller 'Main', ($scope, $rootScope, $http, util) ->
+  $scope.thou_sep = util.thou_sep # export to all child conotrollers
 
   to_json = (d) -> # convert google query response to json
     re =  /^([^(]+?\()(.*)\);$/g
     match = re.exec d
     JSON.parse match[2]
 
-  # res.table.row[i]; string/text values are not eval-ed
-  eval_row = (r) -> r.c.map (c)->
-                      if c.f?
-                        if typeof(c.v) == 'string' && c.v.match /^Date/
-                          eval 'new ' + c.v
-                        else
-                          eval c.v
-                      else
-                        c.v
-  # some global vars
+  # some global vars, and functions
+  $scope.to_json      = to_json
   $scope.uploadNeeded = no
-  $scope.KEY      ='1R5S3ZZg1ypygf_fpRoWnsYmeqnNI2ZVosQh2nJ3Aqm0'
-  $scope.URL      = "https://spreadsheets.google.com/"
-  $scope.RE       =  /^([^(]+?\()(.*)\);$/g
-  $scope.to_json  = to_json
-  $scope.eval_row = eval_row
-
-  # calc next draw for given d
-  $scope.nextDraw = (d) ->
-    throw "nextDraw(); argument error" unless d
-    throw "Not a valid draw: #{ d }" unless d.draw? or d.date?
-    date = new Date d.date
-    switch date.getDay()
-      when 3 then date.setDate(date.getDate() + 3)
-      when 6 then date.setDate(date.getDate() + 4)
-      else throw "Invalid draw date: #{ d.date }"
-    if date.getFullYear() == d.date.getFullYear()
-      { draw: d.draw + 1, date: date }
-    else
-      { draw: 1, date: date }
+  $scope.GS_KEY       = util.GS_KEY
+  $scope.GS_URL       = util.GS_URL
+  $scope.RES_RE       = util.RES_RE
+  $scope.eval_row     = util.eval_row
+  $scope.yesterday    = util.yesterday
+  $scope.nextDraw     = util.nextDraw
 
   # get last year
-  $scope.qurl = (q) -> "#{ $scope.URL }tq?tqx=out:json&key=#{ $scope.KEY }" +
+  $scope.qurl = (q) -> "#{ $scope.GS_URL }tq?tqx=out:json&key=#{ $scope.GS_KEY }" +
                 "&tq=#{ encodeURI q }"
   query = 'SELECT YEAR(B) ORDER BY YEAR(B) DESC LIMIT 1'
   $http.get $scope.qurl(query)
@@ -136,13 +107,9 @@ angular.module 'app', ['ionic', 'app.util']
       # $scope.uploadNeeded = no # since we can't know 
       $scope.uploadNeeded = no # since we can't know 
       return no
-    yesterday = new Date
-    yesterday.setDate(yesterday.getDate() - 1)
-    yesterday.setHours 0
-    yesterday.setMinutes 0
-    yesterday.setSeconds 0
+    
     nextd = $scope.nextDraw $scope.lastDraw
-    $scope.uploadNeeded = (nextd.date <= yesterday)
+    $scope.uploadNeeded = (nextd.date <= $scope.yesterday())
   
   # we watch on lastDraw
   $rootScope.$watch 'lastDraw', (n, o) -> # old and new values
