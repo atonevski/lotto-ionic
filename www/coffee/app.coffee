@@ -3,7 +3,7 @@
 # angular.module is a global place for creating, registering and retrieving Angular modules
 # 'starter' is the name of this angular module example (also set in a <body> attribute in index.html)
 # the 2nd parameter is an array of 'requires'
-angular.module 'app', ['ionic', 'app.util']
+angular.module 'app', ['ionic', 'app.util', 'app.upload']
        .config ($stateProvider, $urlRouterProvider) ->
          $stateProvider.state 'home', {
              url:          '/home'
@@ -165,7 +165,8 @@ angular.module 'app', ['ionic', 'app.util']
         duration: 3000
       })
           
-.controller 'Weekly', ($scope, $http, $stateParams, $timeout, $ionicLoading, $ionicPosition, $ionicScrollDelegate) ->
+.controller 'Weekly', ($scope, $http, $stateParams, $timeout
+, $ionicLoading, $ionicPosition, $ionicScrollDelegate) ->
   $scope.bubbleVisible = no
   $scope.bubble = d3.select '#weekly-list'
                     .append 'div'
@@ -646,12 +647,14 @@ angular.module 'app', ['ionic', 'app.util']
       })
 
   # A: draw #, B: date, P..W: winning column lotto, X: winning column joker
-  query = """SELECT 
-                YEAR(B), COUNT(A), MIN(C), MAX(C), AVG(C),
-                SUM(D), SUM(E), AVG(F), AVG(G), AVG(H),
-                MIN(I), MAX(I), AVG(I)
-             GROUP BY YEAR(B)
-             ORDER BY YEAR(B)"""
+  query = """
+      SELECT 
+        YEAR(B), COUNT(A), MIN(C), MAX(C), AVG(C),
+        SUM(D), SUM(E), AVG(F), AVG(G), AVG(H),
+        MIN(I), MAX(I), AVG(I)
+      GROUP BY YEAR(B)
+      ORDER BY YEAR(B)
+    """
   $http.get $scope.qurl(query)
     .success (data, status) ->
       res = $scope.to_json data

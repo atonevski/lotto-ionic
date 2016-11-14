@@ -1,4 +1,4 @@
-angular.module('app', ['ionic', 'app.util']).config(function($stateProvider, $urlRouterProvider) {
+angular.module('app', ['ionic', 'app.util', 'app.upload']).config(function($stateProvider, $urlRouterProvider) {
   $stateProvider.state('home', {
     url: '/home',
     templateUrl: 'views/home/home.html'
@@ -554,7 +554,7 @@ angular.module('app', ['ionic', 'app.util']).config(function($stateProvider, $ur
       duration: 3000
     });
   });
-  query = "SELECT \n   YEAR(B), COUNT(A), MIN(C), MAX(C), AVG(C),\n   SUM(D), SUM(E), AVG(F), AVG(G), AVG(H),\n   MIN(I), MAX(I), AVG(I)\nGROUP BY YEAR(B)\nORDER BY YEAR(B)";
+  query = "SELECT \n  YEAR(B), COUNT(A), MIN(C), MAX(C), AVG(C),\n  SUM(D), SUM(E), AVG(F), AVG(G), AVG(H),\n  MIN(I), MAX(I), AVG(I)\nGROUP BY YEAR(B)\nORDER BY YEAR(B)";
   return $http.get($scope.qurl(query)).success(function(data, status) {
     var res;
     res = $scope.to_json(data);
@@ -836,7 +836,7 @@ angular.module('app', ['ionic', 'app.util']).config(function($stateProvider, $ur
   };
 });
 
-angular.module('app.util', []).controller('Upload', function($scope, $rootScope, $ionicPopup, $state, $timeout, $ionicLoading, $http) {
+angular.module('app.upload', []).controller('Upload', function($scope, $rootScope, $ionicPopup, $state, $timeout, $ionicLoading, $http) {
   var popup;
   $scope.dateToDMY = function(d) {
     var a;
@@ -1044,7 +1044,9 @@ angular.module('app.util', []).controller('Upload', function($scope, $rootScope,
       return $state.go('home');
     }
   });
-}).controller('About', function($scope, $http) {});
+});
+
+angular.module('app.util', []).controller('About', function($scope, $http) {});
 
 angular.module('app.util').factory('util', function() {
   var GS_KEY, GS_URL, RES_RE, fac;
