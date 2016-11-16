@@ -70,18 +70,18 @@ angular.module 'app', ['ionic', 'ngCordova', 'app.util', 'app.upload', 'app.annu
     if window.StatusBar
       StatusBar.styleDefault()
 
-    if window.cordova
-      console.log "cordova defined!"
-      $cordovaAppVersion.getVersionNumber().then (ver) ->
-        $rootScope.appVersion = ver
-        console.log "Determined app version: #{ ver }"
-
 .controller 'Main', ($scope, $rootScope, $http, util, $cordovaAppVersion) ->
-  # ionic.Platform.ready () ->
-  #   console.log "device is ready"
-  #   cordova.getAppVersion.getVersionNumber().then (ver) ->
-  #     $rootScope.appVersion = ver
-  #     console.log "Found app version: #{ ver }"
+  # document.addEventListener 'deviceready', () ->
+  #   console.log 'device ready'
+  #   $cordovaAppVersion.getVersionNumber (ver) ->
+  #     $scope.appVersion = ver
+  # , false
+  ionic.Platform.ready () ->
+    if window.cordova
+      $cordovaAppVersion.getVersionNumber().then (ver) ->
+        $scope.appVersion = ver
+      $cordovaAppVersion.getAppName().then (name) ->
+        $scope.appName = name
 
   to_json = (d) -> # convert google query response to json
     re =  /^([^(]+?\()(.*)\);$/g

@@ -80,18 +80,21 @@ angular.module('app', ['ionic', 'ngCordova', 'app.util', 'app.upload', 'app.annu
       cordova.plugins.Keyboard.disableScroll(true);
     }
     if (window.StatusBar) {
-      StatusBar.styleDefault();
-    }
-    if (window.cordova) {
-      console.log("cordova defined!");
-      return $cordovaAppVersion.getVersionNumber().then(function(ver) {
-        $rootScope.appVersion = ver;
-        return console.log("Determined app version: " + ver);
-      });
+      return StatusBar.styleDefault();
     }
   });
 }).controller('Main', function($scope, $rootScope, $http, util, $cordovaAppVersion) {
   var q, query, to_json;
+  ionic.Platform.ready(function() {
+    if (window.cordova) {
+      $cordovaAppVersion.getVersionNumber().then(function(ver) {
+        return $scope.appVersion = ver;
+      });
+      return $cordovaAppVersion.getAppName().then(function(name) {
+        return $scope.appName = name;
+      });
+    }
+  });
   to_json = function(d) {
     var match, re;
     re = /^([^(]+?\()(.*)\);$/g;
