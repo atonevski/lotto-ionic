@@ -1,4 +1,39 @@
-angular.module('app', ['ionic', 'app.util', 'app.upload']).config(function($stateProvider, $urlRouterProvider) {
+angular.module('app.annual', []).controller('Annual', function($scope, $http, $ionicPopup, $timeout, $ionicLoading) {
+  var query;
+  $scope.hideChart = true;
+  $scope.sbarChart = {};
+  $scope.sbarChart.title = 'Bar chart title';
+  $scope.sbarChart.width = $scope.width;
+  $scope.sbarChart.height = $scope.height;
+  query = "SELECT\n  YEAR(B), COUNT(A), SUM(C), SUM(I), SUM(D)\nGROUP BY YEAR(B)\nORDER BY YEAR(B)";
+  $ionicLoading.show();
+  return $http.get($scope.qurl(query)).success(function(data, status) {
+    var res;
+    res = $scope.to_json(data);
+    $scope.sales = res.table.rows.map(function(r) {
+      var a;
+      a = $scope.eval_row(r);
+      return {
+        year: a[0],
+        draws: a[1],
+        'лото': a[2],
+        'џокер': a[3],
+        x7: a[4]
+      };
+    });
+    $scope.sbarChart.data = $scope.sales;
+    $scope.sbarChart.labels = 'year';
+    $scope.sbarChart.categories = ['лото', 'џокер'];
+    return $ionicLoading.hide();
+  }).error(function(err) {
+    return $ionicLoading.show({
+      template: "Не може да се вчитаат годишните податоци. Пробај подоцна.",
+      duration: 3000
+    });
+  });
+});
+
+angular.module('app', ['ionic', 'app.util', 'app.upload', 'app.annual', 'app.weekly', 'app.stats']).config(function($stateProvider, $urlRouterProvider) {
   $stateProvider.state('home', {
     url: '/home',
     templateUrl: 'views/home/home.html'
@@ -109,480 +144,6 @@ angular.module('app', ['ionic', 'app.util', 'app.upload']).config(function($stat
       date: new Date(r[1])
     };
     return $scope.checkUpload();
-  });
-}).controller('Annual', function($scope, $http, $ionicPopup, $timeout, $ionicLoading) {
-  var query;
-  $scope.hideChart = true;
-  $scope.sbarChart = {};
-  $scope.sbarChart.title = 'Bar chart title';
-  $scope.sbarChart.width = $scope.width;
-  $scope.sbarChart.height = $scope.height;
-  query = "SELECT YEAR(B), COUNT(A), SUM(C), SUM(I), SUM(D) GROUP BY YEAR(B) ORDER BY YEAR(B)";
-  $ionicLoading.show();
-  return $http.get($scope.qurl(query)).success(function(data, status) {
-    var res;
-    res = $scope.to_json(data);
-    $scope.sales = res.table.rows.map(function(r) {
-      var a;
-      a = $scope.eval_row(r);
-      return {
-        year: a[0],
-        draws: a[1],
-        'лото': a[2],
-        'џокер': a[3],
-        x7: a[4]
-      };
-    });
-    $scope.sbarChart.data = $scope.sales;
-    $scope.sbarChart.labels = 'year';
-    $scope.sbarChart.categories = ['лото', 'џокер'];
-    return $ionicLoading.hide();
-  }).error(function(err) {
-    return $ionicLoading.show({
-      template: "Не може да се вчитаат годишните податоци. Пробај подоцна.",
-      duration: 3000
-    });
-  });
-}).controller('Weekly', function($scope, $http, $stateParams, $timeout, $ionicLoading, $ionicPosition, $ionicScrollDelegate) {
-  var query, queryYear;
-  $scope.bubbleVisible = false;
-  $scope.bubble = d3.select('#weekly-list').append('div').attr('class', 'bubble bubble-left').attr('id', 'weekly-bubble').on('click', function() {
-    $scope.bubble.transition().duration(1000).style('opacity', 0);
-    return $scope.bubbleVisible = false;
-  }).style('opacity', 0);
-  $scope.showBubble = function(event, idx) {
-    var el, new_top, offset, t;
-    if ($scope.bubbleVisible) {
-      return;
-    }
-    event.stopPropagation();
-    $scope.bubbleVisible = true;
-    t = "<div class='row row-no-padding'>\n  <div class='col col-offset-80 text-right positive'>\n    <small><i class='ion-close-round'></i></small>\n  </div>\n</div>\n<dl class='dl-horizontal'>\n  <dt>Коло:</dt>\n  <dd>" + $scope.sales[idx].draw + "</dd>\n  <dt>Дата:</dt>\n  <dd>" + ($scope.sales[idx].date.toISOString().slice(0, 10).split('-').reverse().join('.')) + "</dd>\n  <hr />\n  <dt>Лото:</dt><dd></dd>\n  <hr />\n  <dt>Уплата:</dt>\n  <dd>" + ($scope.thou_sep($scope.sales[idx].lotto)) + "</dd>";
-    t += "<dt>Добитници:</dt>\n<dd>\n  " + ($scope.sales[idx].lx7 > 0 ? $scope.sales[idx].lx7 + 'x7' : '') + "\n  " + ($scope.sales[idx].lx6p > 0 ? $scope.sales[idx].lx6p + 'x6<sup><strong>+</strong></sup>' : '') + " \n  " + ($scope.sales[idx].lx6 > 0 ? $scope.sales[idx].lx6 + 'x6' : '') + " \n  " + ($scope.sales[idx].lx5 > 0 ? $scope.thou_sep($scope.sales[idx].lx5 + 'x5') : '') + " \n  " + ($scope.sales[idx].lx4 > 0 ? $scope.thou_sep($scope.sales[idx].lx4 + 'x4') : '') + " \n</dd>";
-    t += "<dt>Доб. комбинација:</dt>\n<dd>\n  " + ($scope.sales[idx].lwcol.slice(0, 7).sort(function(a, b) {
-      return +a - +b;
-    }).join(' ')) + "\n  <span style='color: steelblue'>" + $scope.sales[idx].lwcol[7] + "</span>\n  <br />\n  [ " + ($scope.sales[idx].lwcol.slice(0, 7).join(' ')) + "\n  <span style='color: steelblue'>" + $scope.sales[idx].lwcol[7] + "</span> ]\n</dd>";
-    t += "<hr />\n<dt>Џокер:</dt><dd></dd>\n<hr />\n<dt>Уплата:</dt>\n<dd>" + ($scope.thou_sep($scope.sales[idx].joker)) + "</dd>";
-    t += "<dt>Добитници:</dt>\n<dd>\n  " + ($scope.sales[idx].jx6 > 0 ? $scope.sales[idx].jx6 + 'x6' : '') + "\n  " + ($scope.sales[idx].jx5 > 0 ? $scope.sales[idx].jx5 + 'x5' : '') + " \n  " + ($scope.sales[idx].jx4 > 0 ? $scope.sales[idx].jx4 + 'x4' : '') + " \n  " + ($scope.sales[idx].jx3 > 0 ? $scope.thou_sep($scope.sales[idx].jx3 + 'x3') : '') + " \n  " + ($scope.sales[idx].jx2 > 0 ? $scope.thou_sep($scope.sales[idx].jx2 + 'x2') : '') + " \n  " + ($scope.sales[idx].jx1 > 0 ? $scope.thou_sep($scope.sales[idx].jx1 + 'x1') : '') + " \n</dd>";
-    t += "<dt>Доб. комбинација:</dt>\n<dd>\n  " + ($scope.sales[idx].jwcol.split('').join(' ')) + "\n</dd>";
-    t += "</dl>";
-    el = angular.element(document.querySelector("\#draw-" + $scope.sales[idx].draw));
-    offset = $ionicPosition.offset(el);
-    new_top = offset.top + $ionicScrollDelegate.getScrollPosition().top;
-    return $scope.bubble.html(t).style('left', (event.pageX + 10) + 'px').style('top', (new_top - 100) + 'px').style('opacity', 1);
-  };
-  $scope.hideChart = true;
-  $scope.lineChart = {};
-  $scope.lineChart.width = $scope.width;
-  $scope.lineChart.height = $scope.height;
-  $scope.lineChart.hide = true;
-  $scope.dow_to_mk = function(d) {
-    switch (Math.floor(d)) {
-      case 1:
-        return 'недела';
-      case 2:
-        return 'понеделник';
-      case 3:
-        return 'вторник';
-      case 4:
-        return 'среда';
-      case 5:
-        return 'четврток';
-      case 6:
-        return 'петок';
-      case 7:
-        return 'сабота';
-      default:
-        return '';
-    }
-  };
-  $scope.dow_to_en = function(d) {
-    switch (Math.floor(d)) {
-      case 1:
-        return 'Sunday';
-      case 2:
-        return 'Monday';
-      case 3:
-        return 'Tuesday';
-      case 4:
-        return 'Wednesday';
-      case 5:
-        return 'Thursday';
-      case 6:
-        return 'Friday';
-      case 7:
-        return 'Saturday';
-      default:
-        return "*" + d + "*";
-    }
-  };
-  $scope.year = parseInt($stateParams.year);
-  queryYear = "SELECT A, dayOfWeek(B), \n       C, I, B, D, E, F, G, H,\n       J, K, L, M, N, O,\n       P, Q, R, S, T, U, V, W,\n       X\nWHERE YEAR(B) = " + $scope.year + "\nORDER BY A";
-  $ionicLoading.show();
-  $http.get($scope.qurl(queryYear)).success(function(data, status) {
-    var res;
-    res = $scope.to_json(data);
-    $scope.sales = res.table.rows.map(function(r) {
-      var a;
-      a = $scope.eval_row(r);
-      return {
-        draw: a[0],
-        dow: a[1],
-        lotto: a[2],
-        joker: a[3],
-        date: a[4],
-        lx7: a[5],
-        lx6p: a[6],
-        lx6: a[7],
-        lx5: a[8],
-        lx4: a[9],
-        lwcol: a.slice(16, 24),
-        jx6: a[10],
-        jx5: a[11],
-        jx4: a[12],
-        jx3: a[13],
-        jx2: a[14],
-        jx1: a[15],
-        jwcol: a[24]
-      };
-    });
-    $scope.buildSeries();
-    return $ionicLoading.hide();
-  }).error(function(err) {
-    return $ionicLoading.show({
-      template: "Не може да се вчитаат податоци за " + $sope.year + " година. Пробај подоцна.",
-      duration: 3000
-    });
-  });
-  $scope.buildSeries = function() {
-    var a, arr, i, j, len, ref, sale, series;
-    arr = [[], [], [], [], [], [], [], []];
-    ref = $scope.sales;
-    for (j = 0, len = ref.length; j < len; j++) {
-      sale = ref[j];
-      arr[sale.dow].push({
-        x: sale.date,
-        y: sale.lotto,
-        lx7: sale.lx7,
-        draw: sale.draw
-      });
-    }
-    series = [];
-    for (i in arr) {
-      a = arr[i];
-      if (arr[i].length > 0) {
-        series.push({
-          name: $scope.dow_to_mk(i),
-          data: arr[i]
-        });
-      }
-    }
-    return $scope.series = series;
-  };
-  query = "SELECT YEAR(B), COUNT(A) GROUP BY YEAR(B) ORDER BY YEAR(B)";
-  $http.get($scope.qurl(query)).success(function(data, status) {
-    var res;
-    res = $scope.to_json(data);
-    $scope.years = res.table.rows.map(function(r) {
-      var a;
-      a = $scope.eval_row(r);
-      return {
-        year: a[0],
-        draws: a[1]
-      };
-    });
-    return $scope.select = ($scope.years.filter(function(x) {
-      return x.year === $scope.year;
-    }))[0];
-  });
-  return $scope.newSelection = function(v) {
-    $scope.lineChart.hide = true;
-    $scope.select = v;
-    $scope.year = $scope.select.year;
-    queryYear = "SELECT A, dayOfWeek(B), \n        C, I, B, D, E, F, G, H,\n        J, K, L, M, N, O,\n        P, Q, R, S, T, U, V, W,\n        X\nWHERE YEAR(B) = " + $scope.year + "\nORDER BY A";
-    $ionicLoading.show();
-    return $http.get($scope.qurl(queryYear)).success(function(data, status) {
-      var res;
-      res = $scope.to_json(data);
-      $scope.sales = res.table.rows.map(function(r) {
-        var a;
-        a = $scope.eval_row(r);
-        return {
-          draw: a[0],
-          dow: a[1],
-          lotto: a[2],
-          joker: a[3],
-          date: a[4],
-          lx7: a[5],
-          lx6p: a[6],
-          lx6: a[7],
-          lx5: a[8],
-          lx4: a[9],
-          lwcol: a.slice(16, 24),
-          jx6: a[10],
-          jx5: a[11],
-          jx4: a[12],
-          jx3: a[13],
-          jx2: a[14],
-          jx1: a[15],
-          jwcol: a[24]
-        };
-      });
-      $scope.buildSeries();
-      $scope.lineChart.hide = true;
-      return $ionicLoading.hide();
-    }).error(function(err) {
-      return $ionicLoading.show({
-        template: ("Не може да се вчитаат податоци за " + $sope.year + " година.") + " Пробај подоцна.",
-        duration: 3000
-      });
-    });
-  };
-}).controller('LottoStats', function($scope, $http, $ionicLoading) {
-  var $buildLottoFreqs, query;
-  $scope.hideChart = true;
-  $scope.sbarChart = {};
-  $scope.sbarChart.title = 'Bar chart title';
-  $scope.sbarChart.width = $scope.width;
-  $scope.sbarChart.height = $scope.height;
-  query = "SELECT A, B, P, Q, R, S, T, U, V, W\nORDER BY B";
-  $ionicLoading.show();
-  $http.get($scope.qurl(query)).success(function(data, status) {
-    var res;
-    res = $scope.to_json(data);
-    $scope.winColumns = res.table.rows.map(function(r) {
-      var a;
-      a = $scope.eval_row(r);
-      return {
-        draw: a[0],
-        date: a[1],
-        lotto: [a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9]]
-      };
-    });
-    $buildLottoFreqs();
-    return $ionicLoading.hide();
-  }).error(function(err) {
-    return $ionicLoading.show({
-      template: "Не може да се вчитаат добитните комбинации. Пробај подоцна.",
-      duration: 3000
-    });
-  });
-  return $buildLottoFreqs = function() {
-    var a, arr, i, j, k, l, len, n, ref, ref1, results, results1, row;
-    arr = (function() {
-      results = [];
-      for (j = 0; j <= 34; j++){ results.push(j); }
-      return results;
-    }).apply(this).map(function(e) {
-      return [0, 1, 2, 3, 4, 5, 6, 7].map(function() {
-        return 0;
-      });
-    });
-    ref = $scope.winColumns;
-    for (k = 0, len = ref.length; k < len; k++) {
-      row = ref[k];
-      ref1 = row.lotto;
-      for (i in ref1) {
-        n = ref1[i];
-        arr[n][i]++;
-      }
-    }
-    for (i in arr) {
-      a = arr[i];
-      arr[i].push(a.reduce(function(t, e) {
-        return t + e;
-      }));
-    }
-    $scope.freqs = arr.slice(1).map(function(a, i) {
-      return {
-        number: i + 1,
-        '1ви': a[0],
-        '2ри': a[1],
-        '3ти': a[2],
-        '4ти': a[3],
-        '5ти': a[4],
-        '6ти': a[5],
-        '7ми': a[6],
-        'доп.': a[7],
-        total: a[8]
-      };
-    });
-    $scope.sbarChart.data = $scope.freqs;
-    $scope.sbarChart.labels = 'number';
-    $scope.sbarChart.labVals = (function() {
-      results1 = [];
-      for (l = 1; l <= 34; l++){ results1.push(l); }
-      return results1;
-    }).apply(this).filter(function(v) {
-      return v % 2 !== 0;
-    });
-    return $scope.sbarChart.categories = ['1ви', '2ри', '3ти', '4ти', '5ти', '6ти', '7ми', 'доп.'];
-  };
-}).controller('JokerStats', function($scope, $http, $ionicLoading) {
-  var $buildJokerFreqs, query;
-  $scope.hideChart = true;
-  $scope.sbarChart = {};
-  $scope.sbarChart.title = 'Bar chart title';
-  $scope.sbarChart.width = $scope.width;
-  $scope.sbarChart.height = $scope.height;
-  query = "SELECT A, B, X\nORDER BY B";
-  $ionicLoading.show();
-  $http.get($scope.qurl(query)).success(function(data, status) {
-    var res;
-    res = $scope.to_json(data);
-    $scope.winColumns = res.table.rows.map(function(r) {
-      var a;
-      a = $scope.eval_row(r);
-      return {
-        draw: a[0],
-        date: a[1],
-        joker: a[2].split('')
-      };
-    });
-    $buildJokerFreqs();
-    return $ionicLoading.hide();
-  }).error(function(err) {
-    return $ionicLoading.show({
-      template: "Не може да се вчитаат добитните комбинации. Пробај подоцна.",
-      duration: 3000
-    });
-  });
-  return $buildJokerFreqs = function() {
-    var a, arr, i, j, len, n, ref, ref1, row;
-    arr = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(function(e) {
-      return [0, 1, 2, 3, 4, 5].map(function() {
-        return 0;
-      });
-    });
-    ref = $scope.winColumns;
-    for (j = 0, len = ref.length; j < len; j++) {
-      row = ref[j];
-      ref1 = row.joker;
-      for (i in ref1) {
-        n = ref1[i];
-        arr[n][i]++;
-      }
-    }
-    for (i in arr) {
-      a = arr[i];
-      arr[i].push(a.reduce(function(t, e) {
-        return t + e;
-      }));
-    }
-    $scope.freqs = arr.map(function(a, i) {
-      return {
-        number: i,
-        '1ви': a[0],
-        '2ри': a[1],
-        '3ти': a[2],
-        '4ти': a[3],
-        '5ти': a[4],
-        '6ти': a[5],
-        total: a[6]
-      };
-    });
-    $scope.sbarChart.data = $scope.freqs;
-    $scope.sbarChart.labels = 'number';
-    return $scope.sbarChart.categories = ['1ви', '2ри', '3ти', '4ти', '5ти', '6ти'];
-  };
-}).controller('WinnersStats', function($scope, $http, $ionicLoading, $ionicPosition, $ionicScrollDelegate) {
-  var query, qx6, qx6p, qx7;
-  $scope.bubbleVisible = false;
-  $scope.bubble = d3.select('#stats-list').append('div').attr('class', 'bubble bubble-left').attr('id', 'winners-bubble').on('click', function() {
-    $scope.bubble.transition().duration(1000).style('opacity', 0);
-    return $scope.bubbleVisible = false;
-  }).style('opacity', 0);
-  $scope.showBubble = function(event, idx) {
-    var el, new_top, offset, t;
-    if ($scope.bubbleVisible) {
-      return;
-    }
-    event.stopPropagation();
-    $scope.bubbleVisible = true;
-    t = "<div class='row row-no-padding'>\n  <div class='col col-offset-80 text-right positive'>\n    <small><i class='ion-close-round'></i></small>\n  </div>\n</div>\n<dl class='dl-horizontal'>\n  <dt>Година:</dt>\n  <dd>" + $scope.winners[idx].year + "</dd>\n  <dt>Вкупно кола:</dt>\n  <dd>" + $scope.winners[idx].draws + "</dd>\n  <hr />\n  <dt>Лото:</dt><dd></dd>\n  <hr />\n  <dt>Најмала уплата:</dt>\n  <dd>" + ($scope.thou_sep($scope.winners[idx].min)) + "</dd>\n  <dt>Просечна уплата:</dt>\n  <dd>" + ($scope.thou_sep($scope.winners[idx].avg)) + "</dd>\n  <dt>Најголема уплата:</dt>\n  <dd>" + ($scope.thou_sep($scope.winners[idx].max)) + "</dd>\n  <hr />\n  <dt>Џокер:</dt><dd></dd>\n  <hr />\n  <dt>Најмала уплата:</dt>\n  <dd>" + ($scope.thou_sep($scope.winners[idx].jmin)) + "</dd>\n  <dt>Просечна уплата:</dt>\n  <dd>" + ($scope.thou_sep($scope.winners[idx].javg)) + "</dd>\n  <dt>Најголема уплата:</dt>\n  <dd>" + ($scope.thou_sep($scope.winners[idx].jmax)) + "</dd>\n</dl>";
-    el = angular.element(document.querySelector("\#winners-" + $scope.winners[idx].year));
-    offset = $ionicPosition.offset(el);
-    new_top = offset.top + $ionicScrollDelegate.getScrollPosition().top;
-    return $scope.bubble.html(t).style('left', (event.pageX + 10) + 'px').style('top', (new_top - 60) + 'px').style('opacity', 1);
-  };
-  $ionicLoading.show();
-  qx7 = "SELECT\n  YEAR(B), COUNT(D)\nWHERE D > 0\nGROUP BY YEAR(B)\nORDER BY YEAR(B)";
-  $http.get($scope.qurl(qx7)).success(function(data, status) {
-    var res;
-    res = $scope.to_json(data);
-    $scope.winX7 = {};
-    return res.table.rows.forEach(function(r) {
-      var a;
-      a = $scope.eval_row(r);
-      return $scope.winX7[a[0]] = a[1];
-    });
-  }).error(function(err) {
-    return $ionicLoading.show({
-      template: "Не може да се вчитаат добитници x7. Пробај подоцна.",
-      duration: 3000
-    });
-  });
-  qx6p = "SELECT\n  YEAR(B), COUNT(E)\nWHERE E > 0\nGROUP BY YEAR(B)\nORDER BY YEAR(B)";
-  $http.get($scope.qurl(qx6p)).success(function(data, status) {
-    var res;
-    res = $scope.to_json(data);
-    $scope.winX6p = {};
-    return res.table.rows.forEach(function(r) {
-      var a;
-      a = $scope.eval_row(r);
-      return $scope.winX6p[a[0]] = a[1];
-    });
-  }).error(function(err) {
-    return $ionicLoading.show({
-      template: "Не може да се вчитаат добитници x6+1. Пробај подоцна.",
-      duration: 3000
-    });
-  });
-  qx6 = "SELECT\n  YEAR(B), COUNT(F)\nWHERE F > 0\nGROUP BY YEAR(B)\nORDER BY YEAR(B)";
-  $http.get($scope.qurl(qx6)).success(function(data, status) {
-    var res;
-    res = $scope.to_json(data);
-    $scope.winX6 = {};
-    return res.table.rows.forEach(function(r) {
-      var a;
-      a = $scope.eval_row(r);
-      return $scope.winX6[a[0]] = a[1];
-    });
-  }).error(function(err) {
-    return $ionicLoading.show({
-      template: "Не може да се вчитаат добитници x6. Пробај подоцна.",
-      duration: 3000
-    });
-  });
-  query = "SELECT \n  YEAR(B), COUNT(A), MIN(C), MAX(C), AVG(C),\n  SUM(D), SUM(E), AVG(F), AVG(G), AVG(H),\n  MIN(I), MAX(I), AVG(I)\nGROUP BY YEAR(B)\nORDER BY YEAR(B)";
-  return $http.get($scope.qurl(query)).success(function(data, status) {
-    var res;
-    res = $scope.to_json(data);
-    $scope.winners = res.table.rows.map(function(r) {
-      var a;
-      a = $scope.eval_row(r);
-      return {
-        year: a[0],
-        draws: a[1],
-        min: a[2],
-        max: a[3],
-        avg: Math.round(a[4]),
-        jmin: a[10],
-        jmax: a[11],
-        javg: Math.round(a[12]),
-        x7: a[5],
-        'x6+1': a[6],
-        x6: Math.round(a[7]),
-        x5: Math.round(a[8]),
-        x4: Math.round(a[9])
-      };
-    });
-    return $ionicLoading.hide();
-  }).error(function(err) {
-    return $ionicLoading.show({
-      template: "Не може да се вчита статистика на добитници. Пробај подоцна.",
-      duration: 3000
-    });
   });
 }).directive('barChart', function() {
   return {
@@ -834,6 +395,254 @@ angular.module('app', ['ionic', 'app.util', 'app.upload']).config(function($stat
       });
     }
   };
+});
+
+angular.module('app.stats', []).controller('LottoStats', function($scope, $http, $ionicLoading) {
+  var $buildLottoFreqs, query;
+  $scope.hideChart = true;
+  $scope.sbarChart = {};
+  $scope.sbarChart.title = 'Bar chart title';
+  $scope.sbarChart.width = $scope.width;
+  $scope.sbarChart.height = $scope.height;
+  query = "SELECT A, B, P, Q, R, S, T, U, V, W\nORDER BY B";
+  $ionicLoading.show();
+  $http.get($scope.qurl(query)).success(function(data, status) {
+    var res;
+    res = $scope.to_json(data);
+    $scope.winColumns = res.table.rows.map(function(r) {
+      var a;
+      a = $scope.eval_row(r);
+      return {
+        draw: a[0],
+        date: a[1],
+        lotto: [a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9]]
+      };
+    });
+    $buildLottoFreqs();
+    return $ionicLoading.hide();
+  }).error(function(err) {
+    return $ionicLoading.show({
+      template: "Не може да се вчитаат добитните комбинации. Пробај подоцна.",
+      duration: 3000
+    });
+  });
+  return $buildLottoFreqs = function() {
+    var a, arr, i, j, k, l, len, n, ref, ref1, results, results1, row;
+    arr = (function() {
+      results = [];
+      for (j = 0; j <= 34; j++){ results.push(j); }
+      return results;
+    }).apply(this).map(function(e) {
+      return [0, 1, 2, 3, 4, 5, 6, 7].map(function() {
+        return 0;
+      });
+    });
+    ref = $scope.winColumns;
+    for (k = 0, len = ref.length; k < len; k++) {
+      row = ref[k];
+      ref1 = row.lotto;
+      for (i in ref1) {
+        n = ref1[i];
+        arr[n][i]++;
+      }
+    }
+    for (i in arr) {
+      a = arr[i];
+      arr[i].push(a.reduce(function(t, e) {
+        return t + e;
+      }));
+    }
+    $scope.freqs = arr.slice(1).map(function(a, i) {
+      return {
+        number: i + 1,
+        '1ви': a[0],
+        '2ри': a[1],
+        '3ти': a[2],
+        '4ти': a[3],
+        '5ти': a[4],
+        '6ти': a[5],
+        '7ми': a[6],
+        'доп.': a[7],
+        total: a[8]
+      };
+    });
+    $scope.sbarChart.data = $scope.freqs;
+    $scope.sbarChart.labels = 'number';
+    $scope.sbarChart.labVals = (function() {
+      results1 = [];
+      for (l = 1; l <= 34; l++){ results1.push(l); }
+      return results1;
+    }).apply(this).filter(function(v) {
+      return v % 2 !== 0;
+    });
+    return $scope.sbarChart.categories = ['1ви', '2ри', '3ти', '4ти', '5ти', '6ти', '7ми', 'доп.'];
+  };
+}).controller('JokerStats', function($scope, $http, $ionicLoading) {
+  var $buildJokerFreqs, query;
+  $scope.hideChart = true;
+  $scope.sbarChart = {};
+  $scope.sbarChart.title = 'Bar chart title';
+  $scope.sbarChart.width = $scope.width;
+  $scope.sbarChart.height = $scope.height;
+  query = "SELECT A, B, X\nORDER BY B";
+  $ionicLoading.show();
+  $http.get($scope.qurl(query)).success(function(data, status) {
+    var res;
+    res = $scope.to_json(data);
+    $scope.winColumns = res.table.rows.map(function(r) {
+      var a;
+      a = $scope.eval_row(r);
+      return {
+        draw: a[0],
+        date: a[1],
+        joker: a[2].split('')
+      };
+    });
+    $buildJokerFreqs();
+    return $ionicLoading.hide();
+  }).error(function(err) {
+    return $ionicLoading.show({
+      template: "Не може да се вчитаат добитните комбинации. Пробај подоцна.",
+      duration: 3000
+    });
+  });
+  return $buildJokerFreqs = function() {
+    var a, arr, i, j, len, n, ref, ref1, row;
+    arr = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(function(e) {
+      return [0, 1, 2, 3, 4, 5].map(function() {
+        return 0;
+      });
+    });
+    ref = $scope.winColumns;
+    for (j = 0, len = ref.length; j < len; j++) {
+      row = ref[j];
+      ref1 = row.joker;
+      for (i in ref1) {
+        n = ref1[i];
+        arr[n][i]++;
+      }
+    }
+    for (i in arr) {
+      a = arr[i];
+      arr[i].push(a.reduce(function(t, e) {
+        return t + e;
+      }));
+    }
+    $scope.freqs = arr.map(function(a, i) {
+      return {
+        number: i,
+        '1ви': a[0],
+        '2ри': a[1],
+        '3ти': a[2],
+        '4ти': a[3],
+        '5ти': a[4],
+        '6ти': a[5],
+        total: a[6]
+      };
+    });
+    $scope.sbarChart.data = $scope.freqs;
+    $scope.sbarChart.labels = 'number';
+    return $scope.sbarChart.categories = ['1ви', '2ри', '3ти', '4ти', '5ти', '6ти'];
+  };
+}).controller('WinnersStats', function($scope, $http, $ionicLoading, $ionicPosition, $ionicScrollDelegate) {
+  var query, qx6, qx6p, qx7;
+  $scope.bubbleVisible = false;
+  $scope.bubble = d3.select('#stats-list').append('div').attr('class', 'bubble bubble-left').attr('id', 'winners-bubble').on('click', function() {
+    $scope.bubble.transition().duration(1000).style('opacity', 0);
+    return $scope.bubbleVisible = false;
+  }).style('opacity', 0);
+  $scope.showBubble = function(event, idx) {
+    var el, new_top, offset, t;
+    if ($scope.bubbleVisible) {
+      return;
+    }
+    event.stopPropagation();
+    $scope.bubbleVisible = true;
+    t = "<div class='row row-no-padding'>\n  <div class='col col-offset-80 text-right positive'>\n    <small><i class='ion-close-round'></i></small>\n  </div>\n</div>\n<dl class='dl-horizontal'>\n  <dt>Година:</dt>\n  <dd>" + $scope.winners[idx].year + "</dd>\n  <dt>Вкупно кола:</dt>\n  <dd>" + $scope.winners[idx].draws + "</dd>\n  <hr />\n  <dt>Лото:</dt><dd></dd>\n  <hr />\n  <dt>Најмала уплата:</dt>\n  <dd>" + ($scope.thou_sep($scope.winners[idx].min)) + "</dd>\n  <dt>Просечна уплата:</dt>\n  <dd>" + ($scope.thou_sep($scope.winners[idx].avg)) + "</dd>\n  <dt>Најголема уплата:</dt>\n  <dd>" + ($scope.thou_sep($scope.winners[idx].max)) + "</dd>\n  <hr />\n  <dt>Џокер:</dt><dd></dd>\n  <hr />\n  <dt>Најмала уплата:</dt>\n  <dd>" + ($scope.thou_sep($scope.winners[idx].jmin)) + "</dd>\n  <dt>Просечна уплата:</dt>\n  <dd>" + ($scope.thou_sep($scope.winners[idx].javg)) + "</dd>\n  <dt>Најголема уплата:</dt>\n  <dd>" + ($scope.thou_sep($scope.winners[idx].jmax)) + "</dd>\n</dl>";
+    el = angular.element(document.querySelector("\#winners-" + $scope.winners[idx].year));
+    offset = $ionicPosition.offset(el);
+    new_top = offset.top + $ionicScrollDelegate.getScrollPosition().top;
+    return $scope.bubble.html(t).style('left', (event.pageX + 10) + 'px').style('top', (new_top - 60) + 'px').style('opacity', 1);
+  };
+  $ionicLoading.show();
+  qx7 = "SELECT\n  YEAR(B), COUNT(D)\nWHERE D > 0\nGROUP BY YEAR(B)\nORDER BY YEAR(B)";
+  $http.get($scope.qurl(qx7)).success(function(data, status) {
+    var res;
+    res = $scope.to_json(data);
+    $scope.winX7 = {};
+    return res.table.rows.forEach(function(r) {
+      var a;
+      a = $scope.eval_row(r);
+      return $scope.winX7[a[0]] = a[1];
+    });
+  }).error(function(err) {
+    return $ionicLoading.show({
+      template: "Не може да се вчитаат добитници x7. Пробај подоцна.",
+      duration: 3000
+    });
+  });
+  qx6p = "SELECT\n  YEAR(B), COUNT(E)\nWHERE E > 0\nGROUP BY YEAR(B)\nORDER BY YEAR(B)";
+  $http.get($scope.qurl(qx6p)).success(function(data, status) {
+    var res;
+    res = $scope.to_json(data);
+    $scope.winX6p = {};
+    return res.table.rows.forEach(function(r) {
+      var a;
+      a = $scope.eval_row(r);
+      return $scope.winX6p[a[0]] = a[1];
+    });
+  }).error(function(err) {
+    return $ionicLoading.show({
+      template: "Не може да се вчитаат добитници x6+1. Пробај подоцна.",
+      duration: 3000
+    });
+  });
+  qx6 = "SELECT\n  YEAR(B), COUNT(F)\nWHERE F > 0\nGROUP BY YEAR(B)\nORDER BY YEAR(B)";
+  $http.get($scope.qurl(qx6)).success(function(data, status) {
+    var res;
+    res = $scope.to_json(data);
+    $scope.winX6 = {};
+    return res.table.rows.forEach(function(r) {
+      var a;
+      a = $scope.eval_row(r);
+      return $scope.winX6[a[0]] = a[1];
+    });
+  }).error(function(err) {
+    return $ionicLoading.show({
+      template: "Не може да се вчитаат добитници x6. Пробај подоцна.",
+      duration: 3000
+    });
+  });
+  query = "SELECT \n  YEAR(B), COUNT(A), MIN(C), MAX(C), AVG(C),\n  SUM(D), SUM(E), AVG(F), AVG(G), AVG(H),\n  MIN(I), MAX(I), AVG(I)\nGROUP BY YEAR(B)\nORDER BY YEAR(B)";
+  return $http.get($scope.qurl(query)).success(function(data, status) {
+    var res;
+    res = $scope.to_json(data);
+    $scope.winners = res.table.rows.map(function(r) {
+      var a;
+      a = $scope.eval_row(r);
+      return {
+        year: a[0],
+        draws: a[1],
+        min: a[2],
+        max: a[3],
+        avg: Math.round(a[4]),
+        jmin: a[10],
+        jmax: a[11],
+        javg: Math.round(a[12]),
+        x7: a[5],
+        'x6+1': a[6],
+        x6: Math.round(a[7]),
+        x5: Math.round(a[8]),
+        x4: Math.round(a[9])
+      };
+    });
+    return $ionicLoading.hide();
+  }).error(function(err) {
+    return $ionicLoading.show({
+      template: "Не може да се вчита статистика на добитници. Пробај подоцна.",
+      duration: 3000
+    });
+  });
 });
 
 angular.module('app.upload', []).controller('Upload', function($scope, $rootScope, $ionicPopup, $state, $timeout, $ionicLoading, $http) {
@@ -1123,5 +932,202 @@ angular.module('app.util').factory('util', function() {
         };
       }
     }
+  };
+});
+
+angular.module('app.weekly', []).controller('Weekly', function($scope, $http, $stateParams, $timeout, $ionicLoading, $ionicPosition, $ionicScrollDelegate) {
+  var query, queryYear;
+  $scope.bubbleVisible = false;
+  $scope.bubble = d3.select('#weekly-list').append('div').attr('class', 'bubble bubble-left').attr('id', 'weekly-bubble').on('click', function() {
+    $scope.bubble.transition().duration(1000).style('opacity', 0);
+    return $scope.bubbleVisible = false;
+  }).style('opacity', 0);
+  $scope.showBubble = function(event, idx) {
+    var el, new_top, offset, t;
+    if ($scope.bubbleVisible) {
+      return;
+    }
+    event.stopPropagation();
+    $scope.bubbleVisible = true;
+    t = "<div class='row row-no-padding'>\n  <div class='col col-offset-80 text-right positive'>\n    <small><i class='ion-close-round'></i></small>\n  </div>\n</div>\n<dl class='dl-horizontal'>\n  <dt>Коло:</dt>\n  <dd>" + $scope.sales[idx].draw + "</dd>\n  <dt>Дата:</dt>\n  <dd>" + ($scope.sales[idx].date.toISOString().slice(0, 10).split('-').reverse().join('.')) + "</dd>\n  <hr />\n  <dt>Лото:</dt><dd></dd>\n  <hr />\n  <dt>Уплата:</dt>\n  <dd>" + ($scope.thou_sep($scope.sales[idx].lotto)) + "</dd>";
+    t += "<dt>Добитници:</dt>\n<dd>\n  " + ($scope.sales[idx].lx7 > 0 ? $scope.sales[idx].lx7 + 'x7' : '') + "\n  " + ($scope.sales[idx].lx6p > 0 ? $scope.sales[idx].lx6p + 'x6<sup><strong>+</strong></sup>' : '') + " \n  " + ($scope.sales[idx].lx6 > 0 ? $scope.sales[idx].lx6 + 'x6' : '') + " \n  " + ($scope.sales[idx].lx5 > 0 ? $scope.thou_sep($scope.sales[idx].lx5 + 'x5') : '') + " \n  " + ($scope.sales[idx].lx4 > 0 ? $scope.thou_sep($scope.sales[idx].lx4 + 'x4') : '') + " \n</dd>";
+    t += "<dt>Доб. комбинација:</dt>\n<dd>\n  " + ($scope.sales[idx].lwcol.slice(0, 7).sort(function(a, b) {
+      return +a - +b;
+    }).join(' ')) + "\n  <span style='color: steelblue'>" + $scope.sales[idx].lwcol[7] + "</span>\n  <br />\n  [ " + ($scope.sales[idx].lwcol.slice(0, 7).join(' ')) + "\n  <span style='color: steelblue'>" + $scope.sales[idx].lwcol[7] + "</span> ]\n</dd>";
+    t += "<hr />\n<dt>Џокер:</dt><dd></dd>\n<hr />\n<dt>Уплата:</dt>\n<dd>" + ($scope.thou_sep($scope.sales[idx].joker)) + "</dd>";
+    t += "<dt>Добитници:</dt>\n<dd>\n  " + ($scope.sales[idx].jx6 > 0 ? $scope.sales[idx].jx6 + 'x6' : '') + "\n  " + ($scope.sales[idx].jx5 > 0 ? $scope.sales[idx].jx5 + 'x5' : '') + " \n  " + ($scope.sales[idx].jx4 > 0 ? $scope.sales[idx].jx4 + 'x4' : '') + " \n  " + ($scope.sales[idx].jx3 > 0 ? $scope.thou_sep($scope.sales[idx].jx3 + 'x3') : '') + " \n  " + ($scope.sales[idx].jx2 > 0 ? $scope.thou_sep($scope.sales[idx].jx2 + 'x2') : '') + " \n  " + ($scope.sales[idx].jx1 > 0 ? $scope.thou_sep($scope.sales[idx].jx1 + 'x1') : '') + " \n</dd>";
+    t += "<dt>Доб. комбинација:</dt>\n<dd>\n  " + ($scope.sales[idx].jwcol.split('').join(' ')) + "\n</dd>";
+    t += "</dl>";
+    el = angular.element(document.querySelector("\#draw-" + $scope.sales[idx].draw));
+    offset = $ionicPosition.offset(el);
+    new_top = offset.top + $ionicScrollDelegate.getScrollPosition().top;
+    return $scope.bubble.html(t).style('left', (event.pageX + 10) + 'px').style('top', (new_top - 100) + 'px').style('opacity', 1);
+  };
+  $scope.hideChart = true;
+  $scope.lineChart = {};
+  $scope.lineChart.width = $scope.width;
+  $scope.lineChart.height = $scope.height;
+  $scope.lineChart.hide = true;
+  $scope.dow_to_mk = function(d) {
+    switch (Math.floor(d)) {
+      case 1:
+        return 'недела';
+      case 2:
+        return 'понеделник';
+      case 3:
+        return 'вторник';
+      case 4:
+        return 'среда';
+      case 5:
+        return 'четврток';
+      case 6:
+        return 'петок';
+      case 7:
+        return 'сабота';
+      default:
+        return '';
+    }
+  };
+  $scope.dow_to_en = function(d) {
+    switch (Math.floor(d)) {
+      case 1:
+        return 'Sunday';
+      case 2:
+        return 'Monday';
+      case 3:
+        return 'Tuesday';
+      case 4:
+        return 'Wednesday';
+      case 5:
+        return 'Thursday';
+      case 6:
+        return 'Friday';
+      case 7:
+        return 'Saturday';
+      default:
+        return "*" + d + "*";
+    }
+  };
+  $scope.year = parseInt($stateParams.year);
+  queryYear = "SELECT A, dayOfWeek(B), \n       C, I, B, D, E, F, G, H,\n       J, K, L, M, N, O,\n       P, Q, R, S, T, U, V, W,\n       X\nWHERE YEAR(B) = " + $scope.year + "\nORDER BY A";
+  $ionicLoading.show();
+  $http.get($scope.qurl(queryYear)).success(function(data, status) {
+    var res;
+    res = $scope.to_json(data);
+    $scope.sales = res.table.rows.map(function(r) {
+      var a;
+      a = $scope.eval_row(r);
+      return {
+        draw: a[0],
+        dow: a[1],
+        lotto: a[2],
+        joker: a[3],
+        date: a[4],
+        lx7: a[5],
+        lx6p: a[6],
+        lx6: a[7],
+        lx5: a[8],
+        lx4: a[9],
+        lwcol: a.slice(16, 24),
+        jx6: a[10],
+        jx5: a[11],
+        jx4: a[12],
+        jx3: a[13],
+        jx2: a[14],
+        jx1: a[15],
+        jwcol: a[24]
+      };
+    });
+    $scope.buildSeries();
+    return $ionicLoading.hide();
+  }).error(function(err) {
+    return $ionicLoading.show({
+      template: "Не може да се вчитаат податоци за " + $sope.year + " година. Пробај подоцна.",
+      duration: 3000
+    });
+  });
+  $scope.buildSeries = function() {
+    var a, arr, i, j, len, ref, sale, series;
+    arr = [[], [], [], [], [], [], [], []];
+    ref = $scope.sales;
+    for (j = 0, len = ref.length; j < len; j++) {
+      sale = ref[j];
+      arr[sale.dow].push({
+        x: sale.date,
+        y: sale.lotto,
+        lx7: sale.lx7,
+        draw: sale.draw
+      });
+    }
+    series = [];
+    for (i in arr) {
+      a = arr[i];
+      if (arr[i].length > 0) {
+        series.push({
+          name: $scope.dow_to_mk(i),
+          data: arr[i]
+        });
+      }
+    }
+    return $scope.series = series;
+  };
+  query = "SELECT YEAR(B), COUNT(A) GROUP BY YEAR(B) ORDER BY YEAR(B)";
+  $http.get($scope.qurl(query)).success(function(data, status) {
+    var res;
+    res = $scope.to_json(data);
+    $scope.years = res.table.rows.map(function(r) {
+      var a;
+      a = $scope.eval_row(r);
+      return {
+        year: a[0],
+        draws: a[1]
+      };
+    });
+    return $scope.select = ($scope.years.filter(function(x) {
+      return x.year === $scope.year;
+    }))[0];
+  });
+  return $scope.newSelection = function(v) {
+    $scope.lineChart.hide = true;
+    $scope.select = v;
+    $scope.year = $scope.select.year;
+    queryYear = "SELECT A, dayOfWeek(B), \n        C, I, B, D, E, F, G, H,\n        J, K, L, M, N, O,\n        P, Q, R, S, T, U, V, W,\n        X\nWHERE YEAR(B) = " + $scope.year + "\nORDER BY A";
+    $ionicLoading.show();
+    return $http.get($scope.qurl(queryYear)).success(function(data, status) {
+      var res;
+      res = $scope.to_json(data);
+      $scope.sales = res.table.rows.map(function(r) {
+        var a;
+        a = $scope.eval_row(r);
+        return {
+          draw: a[0],
+          dow: a[1],
+          lotto: a[2],
+          joker: a[3],
+          date: a[4],
+          lx7: a[5],
+          lx6p: a[6],
+          lx6: a[7],
+          lx5: a[8],
+          lx4: a[9],
+          lwcol: a.slice(16, 24),
+          jx6: a[10],
+          jx5: a[11],
+          jx4: a[12],
+          jx3: a[13],
+          jx2: a[14],
+          jx1: a[15],
+          jwcol: a[24]
+        };
+      });
+      $scope.buildSeries();
+      $scope.lineChart.hide = true;
+      return $ionicLoading.hide();
+    }).error(function(err) {
+      return $ionicLoading.show({
+        template: ("Не може да се вчитаат податоци за " + $sope.year + " година.") + " Пробај подоцна.",
+        duration: 3000
+      });
+    });
   };
 });
