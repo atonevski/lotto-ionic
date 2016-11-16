@@ -3,7 +3,7 @@
 # angular.module is a global place for creating, registering and retrieving Angular modules
 # 'starter' is the name of this angular module example (also set in a <body> attribute in index.html)
 # the 2nd parameter is an array of 'requires'
-angular.module 'app', ['ionic', 'app.util', 'app.upload', 'app.annual',
+angular.module 'app', ['ionic', 'ngCordova', 'app.util', 'app.upload', 'app.annual',
         'app.weekly', 'app.stats']
        .config ($stateProvider, $urlRouterProvider) ->
          $stateProvider.state 'home', {
@@ -55,7 +55,7 @@ angular.module 'app', ['ionic', 'app.util', 'app.upload', 'app.annual',
            }
          $urlRouterProvider.otherwise '/home'
 
-.run ($ionicPlatform) ->
+.run ($ionicPlatform, $cordovaAppVersion, $rootScope) ->
   $ionicPlatform.ready () ->
     if window.cordova && window.cordova.plugins.Keyboard
       # Hide the accessory bar by default (remove this to
@@ -70,8 +70,18 @@ angular.module 'app', ['ionic', 'app.util', 'app.upload', 'app.annual',
     if window.StatusBar
       StatusBar.styleDefault()
 
-.controller 'Main', ($scope, $rootScope, $http, util) ->
-  $scope.thou_sep = util.thou_sep # export to all child conotrollers
+    if window.cordova
+      console.log "cordova defined!"
+      $cordovaAppVersion.getVersionNumber().then (ver) ->
+        $rootScope.appVersion = ver
+        console.log "Determined app version: #{ ver }"
+
+.controller 'Main', ($scope, $rootScope, $http, util, $cordovaAppVersion) ->
+  # ionic.Platform.ready () ->
+  #   console.log "device is ready"
+  #   cordova.getAppVersion.getVersionNumber().then (ver) ->
+  #     $rootScope.appVersion = ver
+  #     console.log "Found app version: #{ ver }"
 
   to_json = (d) -> # convert google query response to json
     re =  /^([^(]+?\()(.*)\);$/g
@@ -79,6 +89,7 @@ angular.module 'app', ['ionic', 'app.util', 'app.upload', 'app.annual',
     JSON.parse match[2]
 
   # some global vars, and functions
+  $scope.thou_sep     = util.thou_sep # export to all child conotrollers
   $scope.to_json      = to_json
   $scope.uploadNeeded = no
   $scope.GS_KEY       = util.GS_KEY

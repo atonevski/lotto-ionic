@@ -1,8 +1,9 @@
 angular.module 'app.util', []
 
 # About controller
-.controller 'About', ($scope, $http) ->
-  # empty
+.controller 'About', ($scope) ->
+  # log app version number
+  console.log $scope.appVersion
 
 angular.module 'app.util'
   .factory 'util', () ->

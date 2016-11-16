@@ -33,7 +33,7 @@ angular.module('app.annual', []).controller('Annual', function($scope, $http, $i
   });
 });
 
-angular.module('app', ['ionic', 'app.util', 'app.upload', 'app.annual', 'app.weekly', 'app.stats']).config(function($stateProvider, $urlRouterProvider) {
+angular.module('app', ['ionic', 'ngCordova', 'app.util', 'app.upload', 'app.annual', 'app.weekly', 'app.stats']).config(function($stateProvider, $urlRouterProvider) {
   $stateProvider.state('home', {
     url: '/home',
     templateUrl: 'views/home/home.html'
@@ -73,25 +73,32 @@ angular.module('app', ['ionic', 'app.util', 'app.upload', 'app.annual', 'app.wee
     controller: 'About'
   });
   return $urlRouterProvider.otherwise('/home');
-}).run(function($ionicPlatform) {
+}).run(function($ionicPlatform, $cordovaAppVersion, $rootScope) {
   return $ionicPlatform.ready(function() {
     if (window.cordova && window.cordova.plugins.Keyboard) {
       cordova.plugins.Keyboard.hideKeyboardAccessoryBar(true);
       cordova.plugins.Keyboard.disableScroll(true);
     }
     if (window.StatusBar) {
-      return StatusBar.styleDefault();
+      StatusBar.styleDefault();
+    }
+    if (window.cordova) {
+      console.log("cordova defined!");
+      return $cordovaAppVersion.getVersionNumber().then(function(ver) {
+        $rootScope.appVersion = ver;
+        return console.log("Determined app version: " + ver);
+      });
     }
   });
-}).controller('Main', function($scope, $rootScope, $http, util) {
+}).controller('Main', function($scope, $rootScope, $http, util, $cordovaAppVersion) {
   var q, query, to_json;
-  $scope.thou_sep = util.thou_sep;
   to_json = function(d) {
     var match, re;
     re = /^([^(]+?\()(.*)\);$/g;
     match = re.exec(d);
     return JSON.parse(match[2]);
   };
+  $scope.thou_sep = util.thou_sep;
   $scope.to_json = to_json;
   $scope.uploadNeeded = false;
   $scope.GS_KEY = util.GS_KEY;
@@ -855,7 +862,9 @@ angular.module('app.upload', []).controller('Upload', function($scope, $rootScop
   });
 });
 
-angular.module('app.util', []).controller('About', function($scope, $http) {});
+angular.module('app.util', []).controller('About', function($scope) {
+  return console.log($scope.appVersion);
+});
 
 angular.module('app.util').factory('util', function() {
   var GS_KEY, GS_URL, RES_RE, fac;
