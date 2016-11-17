@@ -1,3 +1,11 @@
+#
+# stats.coffee
+# lotto-ionic
+# v0.0.2
+# Copyright 2016 Andreja Tonevski, https://github.com/atonevski/lotto-ionic
+# For license information see LICENSE in the repository
+#
+
 angular.module 'app.stats', []
 
 .controller 'LottoStats', ($scope, $http, $ionicLoading) ->

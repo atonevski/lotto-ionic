@@ -84,7 +84,7 @@ angular.module('app', ['ionic', 'ngCordova', 'app.util', 'app.upload', 'app.annu
     }
   });
 }).controller('Main', function($scope, $rootScope, $http, util, $cordovaAppVersion) {
-  var q, query, to_json;
+  var k, q, query, to_json, v;
   ionic.Platform.ready(function() {
     if (window.cordova) {
       $cordovaAppVersion.getVersionNumber().then(function(ver) {
@@ -101,15 +101,15 @@ angular.module('app', ['ionic', 'ngCordova', 'app.util', 'app.upload', 'app.annu
     match = re.exec(d);
     return JSON.parse(match[2]);
   };
-  $scope.thou_sep = util.thou_sep;
-  $scope.to_json = to_json;
   $scope.uploadNeeded = false;
-  $scope.GS_KEY = util.GS_KEY;
-  $scope.GS_URL = util.GS_URL;
-  $scope.RES_RE = util.RES_RE;
-  $scope.eval_row = util.eval_row;
-  $scope.yesterday = util.yesterday;
-  $scope.nextDraw = util.nextDraw;
+  $scope.to_json = to_json;
+  console.log('Before: ', $scope);
+  for (k in util) {
+    v = util[k];
+    console.log(k + ":", v);
+    $scope[k] = v;
+  }
+  console.log('After: ', $scope);
   $scope.qurl = function(q) {
     return ($scope.GS_URL + "tq?tqx=out:json&key=" + $scope.GS_KEY) + ("&tq=" + (encodeURI(q)));
   };
@@ -288,7 +288,7 @@ angular.module('app', ['ionic', 'ngCordova', 'app.util', 'app.upload', 'app.annu
         tooltip.html('');
         tooltip.transition().duration(1000).style('opacity', 0.75);
         tooltip.html(t).style('left', (d3.event.pageX + 10) + 'px').style('top', (d3.event.pageY - 75) + 'px').style('opacity', 1);
-        return tooltip.transition().duration(3000).style('opacity', 0);
+        return tooltip.transition().duration(5000).style('opacity', 0);
       }).append('title').html(function(d) {
         return "<strong>" + d.cat + "/" + d.x + "</strong>: " + (scope.thou_sep(d.y));
       });
@@ -387,7 +387,7 @@ angular.module('app', ['ionic', 'ngCordova', 'app.util', 'app.upload', 'app.annu
             tooltip.html(t);
             tooltip.transition().duration(1000).style('opacity', 0.75);
             tooltip.html(t).style('left', d3.event.pageX + 'px').style('top', (d3.event.pageY - 60) + 'px').style('opacity', 1);
-            return tooltip.transition().duration(3500).style('opacity', 0);
+            return tooltip.transition().duration(5000).style('opacity', 0);
           }).attr('d', line).append('title').html(function(d, i) {
             return "<strong>коло: " + d[1].draw + "</strong>";
           });
@@ -657,15 +657,6 @@ angular.module('app.stats', []).controller('LottoStats', function($scope, $http,
 
 angular.module('app.upload', []).controller('Upload', function($scope, $rootScope, $ionicPopup, $state, $timeout, $ionicLoading, $http) {
   var popup;
-  $scope.dateToDMY = function(d) {
-    var a;
-    a = d.toLocaleDateString('en', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    }).split('/');
-    return a[1] + "." + a[0] + "." + a[2];
-  };
   $scope.nextd = $scope.nextDraw($rootScope.lastDraw);
   console.log("Upload: next draw date: " + ($scope.dateToDMY($scope.nextd.date)));
   $scope.URL = "http://test.lotarija.mk/Results/" + "WebService.asmx/GetDetailedReport";
@@ -891,6 +882,17 @@ angular.module('app.util').factory('util', function() {
       }
       return n;
     },
+    dateToDMY: function(d) {
+      var a, opts, sep;
+      opts = {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      };
+      sep = arguments.length > 1 ? arguments[1] : '.';
+      a = d.toLocaleDateString('en', opts).split('/');
+      return "" + a[1] + sep + a[0] + sep + a[2];
+    },
     eval_row: function(r) {
       return r.c.map(function(c) {
         if (c.f != null) {
@@ -943,6 +945,18 @@ angular.module('app.util').factory('util', function() {
           date: date
         };
       }
+    },
+    merge: function(dest, obj) {
+      var i, k, len, o, ref, v;
+      ref = arguments.slice(1);
+      for (i = 0, len = ref.length; i < len; i++) {
+        o = ref[i];
+        for (k in o) {
+          v = o[k];
+          dest[k] = v;
+        }
+      }
+      return dest;
     }
   };
 });
@@ -961,7 +975,7 @@ angular.module('app.weekly', []).controller('Weekly', function($scope, $http, $s
     }
     event.stopPropagation();
     $scope.bubbleVisible = true;
-    t = "<div class='row row-no-padding'>\n  <div class='col col-offset-80 text-right positive'>\n    <small><i class='ion-close-round'></i></small>\n  </div>\n</div>\n<dl class='dl-horizontal'>\n  <dt>Коло:</dt>\n  <dd>" + $scope.sales[idx].draw + "</dd>\n  <dt>Дата:</dt>\n  <dd>" + ($scope.sales[idx].date.toISOString().slice(0, 10).split('-').reverse().join('.')) + "</dd>\n  <hr />\n  <dt>Лото:</dt><dd></dd>\n  <hr />\n  <dt>Уплата:</dt>\n  <dd>" + ($scope.thou_sep($scope.sales[idx].lotto)) + "</dd>";
+    t = "<div class='row row-no-padding'>\n  <div class='col col-offset-80 text-right positive'>\n    <small><i class='ion-close-round'></i></small>\n  </div>\n</div>\n<dl class='dl-horizontal'>\n  <dt>Коло:</dt>\n  <dd>" + $scope.sales[idx].draw + "</dd>\n  <dt>Дата:</dt>\n  <dd>" + ($scope.dateToDMY($scope.sales[idx].date)) + "</dd>\n  <hr />\n  <dt>Лото:</dt><dd></dd>\n  <hr />\n  <dt>Уплата:</dt>\n  <dd>" + ($scope.thou_sep($scope.sales[idx].lotto)) + "</dd>";
     t += "<dt>Добитници:</dt>\n<dd>\n  " + ($scope.sales[idx].lx7 > 0 ? $scope.sales[idx].lx7 + 'x7' : '') + "\n  " + ($scope.sales[idx].lx6p > 0 ? $scope.sales[idx].lx6p + 'x6<sup><strong>+</strong></sup>' : '') + " \n  " + ($scope.sales[idx].lx6 > 0 ? $scope.sales[idx].lx6 + 'x6' : '') + " \n  " + ($scope.sales[idx].lx5 > 0 ? $scope.thou_sep($scope.sales[idx].lx5 + 'x5') : '') + " \n  " + ($scope.sales[idx].lx4 > 0 ? $scope.thou_sep($scope.sales[idx].lx4 + 'x4') : '') + " \n</dd>";
     t += "<dt>Доб. комбинација:</dt>\n<dd>\n  " + ($scope.sales[idx].lwcol.slice(0, 7).sort(function(a, b) {
       return +a - +b;

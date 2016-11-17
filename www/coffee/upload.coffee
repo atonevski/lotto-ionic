@@ -1,11 +1,14 @@
+#
+# upload.coffee
+# lotto-ionic
+# v0.0.2
+# Copyright 2016 Andreja Tonevski, https://github.com/atonevski/lotto-ionic
+# For license information see LICENSE in the repository
+#
+
 angular.module 'app.upload', []
 
 .controller 'Upload', ($scope, $rootScope, $ionicPopup, $state, $timeout, $ionicLoading, $http) ->
-  # handy fn: date to dd.mm.yyyy string
-  $scope.dateToDMY = (d) ->
-    a = d.toLocaleDateString('en', { year: 'numeric', month: '2-digit', day: '2-digit'}).split('/')
-    "#{ a[1] }.#{ a[0] }.#{ a[2] }"
-
   # scope var: next draw
   $scope.nextd = $scope.nextDraw $rootScope.lastDraw
   console.log "Upload: next draw date: #{ $scope.dateToDMY $scope.nextd.date }"

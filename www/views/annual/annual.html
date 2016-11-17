@@ -11,7 +11,8 @@
     <div class='list'>
       <div class='item item-divider divider-annually'>
         <div class='row row-no-padding'>
-          <div class='col col-20'>година</div>
+          <div class='col col-5'></div>
+          <div class='col col-15'>година</div>
           <div class='col col-10 text-center'>изв.</div>
           <div class='col col-10 text-center'>x7</div>
           <div class='col col-30 text-right'>лото</div>
@@ -20,8 +21,10 @@
       </div>
       <div class='item item-annual' ng-repeat='s in sales'>
         <div class='row row-no-padding'>
-          <div class='col col-20'><a href='#/weekly/{{ s.year }}'>
-            <i class='icon ion-android-arrow-dropright dropright'></i></a> {{ s.year }}</div>
+          <div class='col col-5'><a href='#/weekly/{{ s.year }}'>
+            <i class='icon ion-android-arrow-dropright dropright'></i></a>
+          </div>
+          <div class='col col15'>{{ s.year }}</div>
           <div class='col col-10 text-center'>{{ s.draws }}</div>
           <div class='col col-10 text-center'>{{ s.x7 }}</div>
           <div class='col col-30 text-right'>{{ thou_sep(s['лото']) }}</div>

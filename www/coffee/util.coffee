@@ -1,3 +1,10 @@
+#
+# util.coffee
+# lotto-ionic
+# v0.0.2
+# Copyright 2016 Andreja Tonevski, https://github.com/atonevski/lotto-ionic
+# For license information see LICENSE in the repository
+#
 angular.module 'app.util', []
 
 # About controller
@@ -13,9 +20,11 @@ angular.module 'app.util'
     RES_RE =  /^([^(]+?\()(.*)\);$/g
 
     fac =
+      # some constants
       GS_KEY:   GS_KEY
       GS_URL:   GS_URL
       RES_RE:   RES_RE
+
       thou_sep: (n) -> # use second argument = 'mk' if mkd notation
         n = n.toString()
         n = n.replace /(\d+?)(?=(\d{3})+(\D|$))/g, '$1,'
@@ -25,6 +34,15 @@ angular.module 'app.util'
           n = n.replace /,/g, '.'
           n = n.replace /;/g, ','
         n # return this value
+
+      dateToDMY: (d) -> # default is dd.mm.yyyy, 2nd parameted id separator
+        opts = { year: 'numeric', month: '2-digit', day: '2-digit'}
+        sep  = if arguments.length > 1
+                  arguments[1]
+               else
+                  '.'
+        a = d.toLocaleDateString('en', opts).split('/')
+        "#{ a[1] }#{ sep }#{ a[0] }#{ sep }#{ a[2] }"
 
       # res.table.row[i]; string/text values are not eval-ed
       eval_row: (r) ->
@@ -57,3 +75,9 @@ angular.module 'app.util'
           { draw: d.draw + 1, date: date }
         else
           { draw: 1, date: date }
+
+      merge: (dest, obj) ->
+        for o in arguments[1..]
+          dest[k] = v for k, v of o
+        dest
+

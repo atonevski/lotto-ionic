@@ -1,3 +1,11 @@
+#
+# weekly.coffee
+# lotto-ionic
+# v0.0.2
+# Copyright 2016 Andreja Tonevski, https://github.com/atonevski/lotto-ionic
+# For license information see LICENSE in the repository
+#
+
 angular.module 'app.weekly', []
 
 .controller 'Weekly', ($scope, $http, $stateParams, $timeout
@@ -29,8 +37,7 @@ angular.module 'app.weekly', []
         <dt>Коло:</dt>
         <dd>#{ $scope.sales[idx].draw }</dd>
         <dt>Дата:</dt>
-        <dd>#{ $scope.sales[idx].date.toISOString()[0..9]
-                     .split('-').reverse().join('.') }</dd>
+        <dd>#{ $scope.dateToDMY $scope.sales[idx].date }</dd>
         <hr />
         <dt>Лото:</dt><dd></dd>
         <hr />
