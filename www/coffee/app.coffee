@@ -111,15 +111,13 @@ angular.module 'app', ['ionic', 'ngCordova', 'app.util', 'app.upload', 'app.annu
   # $scope.nextDraw     = util.nextDraw
   # $scope.dateToDMY    = util.dateToDMY
 
-  console.log 'Before: ', $scope
-
+  # we can't use util.merge, so we do it 
+  # manually
   for k, v of util
     console.log "#{ k }:", v
     $scope[k] = v
 
   # util.merge $scope, util
-
-  console.log 'After: ', $scope
 
   # get last year
   $scope.qurl = (q) -> "#{ $scope.GS_URL }tq?tqx=out:json&key=#{ $scope.GS_KEY }" +

@@ -103,13 +103,11 @@ angular.module('app', ['ionic', 'ngCordova', 'app.util', 'app.upload', 'app.annu
   };
   $scope.uploadNeeded = false;
   $scope.to_json = to_json;
-  console.log('Before: ', $scope);
   for (k in util) {
     v = util[k];
     console.log(k + ":", v);
     $scope[k] = v;
   }
-  console.log('After: ', $scope);
   $scope.qurl = function(q) {
     return ($scope.GS_URL + "tq?tqx=out:json&key=" + $scope.GS_KEY) + ("&tq=" + (encodeURI(q)));
   };

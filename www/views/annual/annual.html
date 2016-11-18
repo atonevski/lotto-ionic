@@ -20,9 +20,12 @@
         </div>
       </div>
       <div class='item item-annual' ng-repeat='s in sales'>
-        <div class='row row-no-padding'>
-          <div class='col col-5'><a href='#/weekly/{{ s.year }}'>
-            <i class='icon ion-android-arrow-dropright dropright'></i></a>
+        <div class='row row-center row-no-padding'>
+          <div class='col col-5'>
+            <a class='button button-small button-icon icon ion-android-arrow-dropright'
+               href='#/weekly/{{ s.year }}'>
+              <!-- <i class='icon ion-android-arrow-dropright'></i> -->
+            </a>
           </div>
           <div class='col col15'>{{ s.year }}</div>
           <div class='col col-10 text-center'>{{ s.draws }}</div>
