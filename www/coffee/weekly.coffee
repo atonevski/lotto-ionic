@@ -10,6 +10,7 @@ angular.module 'app.weekly', []
 
 .controller 'Weekly', ($scope, $http, $stateParams, $timeout
 , $ionicLoading, $ionicPosition, $ionicScrollDelegate) ->
+
   $scope.bubbleVisible = no
   $scope.bubble = d3.select '#weekly-list'
                     .append 'div'
@@ -249,3 +250,8 @@ angular.module 'app.weekly', []
                     " Пробај подоцна."
           duration: 3000
         })
+  $scope.$watch 'sales', () ->
+    if $scope.year is $scope.lastYear
+      $ionicScrollDelegate.$getByHandle('scroll-to-bottom').scrollBottom true
+    
+  

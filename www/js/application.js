@@ -1111,7 +1111,7 @@ angular.module('app.weekly', []).controller('Weekly', function($scope, $http, $s
       return x.year === $scope.year;
     }))[0];
   });
-  return $scope.newSelection = function(v) {
+  $scope.newSelection = function(v) {
     $scope.lineChart.hide = true;
     $scope.select = v;
     $scope.year = $scope.select.year;
@@ -1154,4 +1154,9 @@ angular.module('app.weekly', []).controller('Weekly', function($scope, $http, $s
       });
     });
   };
+  return $scope.$watch('sales', function() {
+    if ($scope.year === $scope.lastYear) {
+      return $ionicScrollDelegate.$getByHandle('scroll-to-bottom').scrollBottom(true);
+    }
+  });
 });
