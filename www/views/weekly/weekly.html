@@ -26,12 +26,15 @@
         </div>
       </div>
       <div class='item item-weekly' 
-           ng-class="{ monday: s.dow == 2, wednesday: s.dow == 4, thursday: s.dow == 5, saturday: s.dow == 7,  }"
-           ng-repeat='s in sales'
-           ng-click='showBubble($event, $index)'>
+           ng-class="{ monday: s.dow == 2, wednesday: s.dow == 4,
+              thursday: s.dow == 5, saturday: s.dow == 7,  }"
+           ng-repeat='s in sales'>
         <div class='row row-no-padding' id='draw-{{ s.draw }}'>
-          <div class='col col-20'>{{ s.draw }}</div>
-          <div class='col col-20 text-center'>{{ dow_to_mk(s.dow) }}</div>
+          <div class='col col-20' ng-click='showBubble($event, $index)'>
+            {{ s.draw }}
+          </div>
+          <div class='col col-20 text-center'
+               ng-click='showBubble($event, $index)'>{{ dow_to_mk(s.dow) }}</div>
           <div class='col col-30 text-right'>{{ thou_sep(s.lotto) }}</div>
           <div class='col col-30 text-right'>{{ thou_sep(s.joker) }}</div>
         </div>

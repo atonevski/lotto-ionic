@@ -14,8 +14,7 @@
       </div>
 
       <div class='item item-stats' ng-repeat='w in winners'
-          ng-class="{ even: $index % 2 == 0, odd: $index % 2 == 1 }"
-          ng-click='showBubble($event, $index)'>
+          ng-class="{ even: $index % 2 == 0, odd: $index % 2 == 1 }">
         <div class='row row-no-padding row-center' id='winners-{{ w.year }}'>
           <div class='col col-5'>
             <a class='button button-small button-icon icon ion-android-arrow-dropright'
@@ -23,10 +22,16 @@
               <!-- <i class='icon ion-android-arrow-dropright dropright'></i> -->
             </a>
           </div>
-          <div class='col col-15'>{{ w.year }}</div>
-          <div class='col col-15 text-center'>{{ w.x7 }}{{ winX7[w.year] && winX7[w.year] != w.x7 ? '/'+winX7[w.year] : '' }}</div>
-          <div class='col col-20 text-center'>{{ w['x6+1'] }}{{ winX6p[w.year] && winX6p[w.year] != w['x6+1'] ? '/'+winX6p[w.year] : '' }}</div>
-          <div class='col col-15 text-center'>{{ w.x6 }}<small>{{ winX6[w.year] ? ' (' + (winX6[w.year]*100.0/w.draws).toFixed(2) + '%)' : ''}}</small></div>
+          <div class='col col-15' ng-click='showBubble($event, $index)'>{{ w.year }}</div>
+          <div class='col col-15 text-center'>{{ w.x7 }}{{
+              winX7[w.year] && winX7[w.year] != 
+                w.x7 ? '/'+winX7[w.year] : '' }}</div>
+          <div class='col col-20 text-center'>{{ w['x6+1'] }}{{
+              winX6p[w.year] && winX6p[w.year] !=
+                w['x6+1'] ? '/'+winX6p[w.year] : '' }}</div>
+          <div class='col col-15 text-center'>{{ w.x6 }}<small>{{
+              winX6[w.year] ? ' (' + (winX6[w.year]*100.0/w.draws).toFixed(2)
+                + '%)' : ''}}</small></div>
           <div class='col col-15 text-center'>{{ thou_sep(w.x5) }}</div>
           <div class='col col-15 text-right'>{{ thou_sep(w.x4) }}</div>
         </div>
