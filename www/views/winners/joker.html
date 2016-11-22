@@ -1,0 +1,23 @@
+<ion-view title='Систе џокер добитници ×6'>
+  <ion-content>
+    <div class='list' id='winners-list'>
+      <div class='item item-divider divider-winners'>
+        <div class='row row-no-padding'>
+          <div class='col col-25'>година</div>
+          <div class='col col-25 text-center'>коло</div>
+          <div class='col col-10 text-center'>x6</div>
+          <div class='col col-40 text-right'>уплата</div>
+        </div>
+      </div>
+      <div class='item item-winners' ng-repeat='w in winners'
+          ng-class="{ even: $index % 2 == 0, odd: $index % 2 == 1 }">
+        <div class='row row-no-padding row-center' id='winners-{{ w.year }}'>
+          <div class='col col-25'>{{ w.year }}</div>
+          <div class='col col-25 text-center'>{{ w.draw }}</div>
+          <div class='col col-10 text-center'>{{ w.jx6 }}</div>
+          <div class='col col-40 text-right'>{{ thou_sep(w.jsales) }}</div>
+        </div>
+      </div>
+    </div>
+  </ion-content>
+</ion-view>

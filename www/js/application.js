@@ -33,7 +33,7 @@ angular.module('app.annual', []).controller('Annual', function($scope, $http, $i
   });
 });
 
-angular.module('app', ['ionic', 'ngCordova', 'app.util', 'app.upload', 'app.annual', 'app.weekly', 'app.stats']).config(function($stateProvider, $urlRouterProvider) {
+angular.module('app', ['ionic', 'ngCordova', 'app.util', 'app.upload', 'app.annual', 'app.weekly', 'app.stats', 'app.winners']).config(function($stateProvider, $urlRouterProvider) {
   $stateProvider.state('home', {
     url: '/home',
     templateUrl: 'views/home/home.html'
@@ -67,6 +67,17 @@ angular.module('app', ['ionic', 'ngCordova', 'app.util', 'app.upload', 'app.annu
     url: '/upload',
     templateUrl: 'views/upload/upload.html',
     controller: 'Upload'
+  }).state('winners', {
+    url: '/winners',
+    templateUrl: 'views/winners/winners.html'
+  }).state('lotto-winners', {
+    url: '/winners/lotto',
+    templateUrl: 'views/winners/lotto.html',
+    controller: 'LottoWinners'
+  }).state('joker-winners', {
+    url: '/winners/joker',
+    templateUrl: 'views/winners/joker.html',
+    controller: 'JokerWinners'
   }).state('about', {
     url: '/about',
     templateUrl: 'views/about/about.html',
@@ -105,7 +116,6 @@ angular.module('app', ['ionic', 'ngCordova', 'app.util', 'app.upload', 'app.annu
   $scope.to_json = to_json;
   for (k in util) {
     v = util[k];
-    console.log(k + ":", v);
     $scope[k] = v;
   }
   $scope.qurl = function(q) {
@@ -1158,5 +1168,124 @@ angular.module('app.weekly', []).controller('Weekly', function($scope, $http, $s
     if ($scope.year === $scope.lastYear) {
       return $ionicScrollDelegate.$getByHandle('scroll-to-bottom').scrollBottom(true);
     }
+  });
+});
+
+angular.module('app.winners', []).controller('Winners', function($scope, $http, $ionicLoading) {
+  var query;
+  query = "SELECT *\nWHERE \n  D > 0 OR J > 0\nORDER BY B";
+  $ionicLoading.show();
+  return $http.get($scope.qurl(query)).success(function(data, status) {
+    var res;
+    res = $scope.to_json(data);
+    $scope.winners = res.table.rows.map(function(r) {
+      var a;
+      a = $scope.eval_row(r);
+      return {
+        year: a[1].getFullYear(),
+        draw: a[0],
+        date: a[1],
+        lsales: a[2],
+        lx7: a[3],
+        lx6p: a[4],
+        lx6: a[5],
+        lx5: a[6],
+        lx4: a[7],
+        lwcol: a.slice(15, 23),
+        jsales: a[8],
+        jx6: a[9],
+        jx5: a[10],
+        jx4: a[11],
+        jx3: a[12],
+        jx2: a[13],
+        jx1: a[14],
+        jwcol: a[23]
+      };
+    });
+    $ionicLoading.hide();
+    return console.log($scope.winners);
+  }).error(function(err) {
+    return $ionicLoading.show({
+      template: "Не може да се вчитаат добитниците. Пробај подоцна.",
+      duration: 3000
+    });
+  });
+}).controller('LottoWinners', function($scope, $http, $ionicLoading) {
+  var query;
+  query = "SELECT *\nWHERE \n  D > 0\nORDER BY B";
+  $ionicLoading.show();
+  return $http.get($scope.qurl(query)).success(function(data, status) {
+    var res;
+    res = $scope.to_json(data);
+    $scope.winners = res.table.rows.map(function(r) {
+      var a;
+      a = $scope.eval_row(r);
+      return {
+        year: a[1].getFullYear(),
+        draw: a[0],
+        date: a[1],
+        lsales: a[2],
+        lx7: a[3],
+        lx6p: a[4],
+        lx6: a[5],
+        lx5: a[6],
+        lx4: a[7],
+        lwcol: a.slice(15, 23),
+        jsales: a[8],
+        jx6: a[9],
+        jx5: a[10],
+        jx4: a[11],
+        jx3: a[12],
+        jx2: a[13],
+        jx1: a[14],
+        jwcol: a[23]
+      };
+    });
+    $ionicLoading.hide();
+    return console.log($scope.winners);
+  }).error(function(err) {
+    return $ionicLoading.show({
+      template: "Не може да се вчитаат лото добитниците. Пробај подоцна.",
+      duration: 3000
+    });
+  });
+}).controller('JokerWinners', function($scope, $http, $ionicLoading) {
+  var query;
+  query = "SELECT *\nWHERE \n  J > 0\nORDER BY B";
+  $ionicLoading.show();
+  return $http.get($scope.qurl(query)).success(function(data, status) {
+    var res;
+    res = $scope.to_json(data);
+    $scope.winners = res.table.rows.map(function(r) {
+      var a;
+      a = $scope.eval_row(r);
+      return {
+        year: a[1].getFullYear(),
+        draw: a[0],
+        date: a[1],
+        lsales: a[2],
+        lx7: a[3],
+        lx6p: a[4],
+        lx6: a[5],
+        lx5: a[6],
+        lx4: a[7],
+        lwcol: a.slice(15, 23),
+        jsales: a[8],
+        jx6: a[9],
+        jx5: a[10],
+        jx4: a[11],
+        jx3: a[12],
+        jx2: a[13],
+        jx1: a[14],
+        jwcol: a[23]
+      };
+    });
+    $ionicLoading.hide();
+    return console.log($scope.winners);
+  }).error(function(err) {
+    return $ionicLoading.show({
+      template: "Не може да се вчитаат џокер добитниците. Пробај подоцна.",
+      duration: 3000
+    });
   });
 });

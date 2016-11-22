@@ -12,7 +12,7 @@
 # 'starter' is the name of this angular module example (also set in a <body> attribute in index.html)
 # the 2nd parameter is an array of 'requires'
 angular.module 'app', ['ionic', 'ngCordova', 'app.util', 'app.upload', 'app.annual',
-        'app.weekly', 'app.stats']
+        'app.weekly', 'app.stats', 'app.winners']
        .config ($stateProvider, $urlRouterProvider) ->
          $stateProvider.state 'home', {
              url:          '/home'
@@ -55,6 +55,21 @@ angular.module 'app', ['ionic', 'ngCordova', 'app.util', 'app.upload', 'app.annu
              url:          '/upload'
              templateUrl:  'views/upload/upload.html'
              controller:   'Upload'
+           }
+           .state 'winners', {
+             url:          '/winners'
+             templateUrl:  'views/winners/winners.html'
+#             controller:   'Winners'
+           }
+           .state 'lotto-winners', {
+             url:          '/winners/lotto'
+             templateUrl:  'views/winners/lotto.html'
+             controller:   'LottoWinners'
+           }
+           .state 'joker-winners', {
+             url:          '/winners/joker'
+             templateUrl:  'views/winners/joker.html'
+             controller:   'JokerWinners'
            }
            .state 'about', {
              url:          '/about'
@@ -114,7 +129,6 @@ angular.module 'app', ['ionic', 'ngCordova', 'app.util', 'app.upload', 'app.annu
   # we can't use util.merge, so we do it 
   # manually
   for k, v of util
-    console.log "#{ k }:", v
     $scope[k] = v
 
   # util.merge $scope, util

@@ -2,7 +2,8 @@
 * { font-family: 'Open Sans'; }
 
 /* Empty. Add your own CSS if you like */
-.item-annual, .item-weekly, .item-stats { 
+.item-annual, .item-weekly,
+.item-stats, .item-winners { 
   padding-top: 2px;  
   padding-bottom: 2px; 
   margin: 0;
@@ -14,9 +15,10 @@
   border-width: 1px;
 }
 
-.item-stats { font-size: 14px; }
+.item-stats, .item-winners { font-size: 14px; }
 
-.divider-weekly, .divider-annually, .divider-stats {
+.divider-weekly, .divider-annually,
+.divider-stats, .divider-winners {
   font-size: 12px;
   font-weight: bold;
 
