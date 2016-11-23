@@ -33,7 +33,7 @@ angular.module('app.annual', []).controller('Annual', function($scope, $http, $i
   });
 });
 
-angular.module('app', ['ionic', 'ngCordova', 'app.util', 'app.upload', 'app.annual', 'app.weekly', 'app.stats', 'app.winners']).config(function($stateProvider, $urlRouterProvider) {
+angular.module('app', ['ionic', 'ngCordova', 'app.util', 'app.upload', 'app.annual', 'app.weekly', 'app.stats', 'app.winners', 'app.drawn.numbers']).config(function($stateProvider, $urlRouterProvider) {
   $stateProvider.state('home', {
     url: '/home',
     templateUrl: 'views/home/home.html'
@@ -78,6 +78,10 @@ angular.module('app', ['ionic', 'ngCordova', 'app.util', 'app.upload', 'app.annu
     url: '/winners/joker',
     templateUrl: 'views/winners/joker.html',
     controller: 'JokerWinners'
+  }).state('lotto-drawn-numbers', {
+    url: '/drawn-numbers/lotto',
+    templateUrl: 'views/drawn-numbers/lotto.html',
+    controller: 'LottoDrawnNumbers'
   }).state('about', {
     url: '/about',
     templateUrl: 'views/about/about.html',
@@ -413,6 +417,36 @@ angular.module('app', ['ionic', 'ngCordova', 'app.util', 'app.upload', 'app.annu
       });
     }
   };
+});
+
+angular.module('app.drawn.numbers', []).controller('LottoDrawnNumbers', function($scope, $http, $ionicLoading) {
+  var query;
+  query = "SELECT A, B, P, Q, R, S, T, U, V, W\nORDER BY B DESC\nLIMIT " + $scope.LIMIT_DRAWS;
+  $ionicLoading.show();
+  return $http.get($scope.qurl(query)).success(function(data, status) {
+    var res;
+    res = $scope.to_json(data);
+    $scope.numbers = res.table.rows.map(function(r) {
+      var a, sorted;
+      a = $scope.eval_row(r);
+      sorted = a.slice(2, 9).sort(function(a, b) {
+        return +a - +b;
+      });
+      sorted.push(a[9]);
+      return {
+        draw: a[0],
+        date: a[1],
+        column: a.slice(2, 10),
+        sorted: sorted
+      };
+    });
+    return $ionicLoading.hide();
+  }).error(function(err) {
+    return $ionicLoading.show({
+      template: "Не може да се вчитаат последните добитни комбинации. Пробај подоцна.",
+      duration: 3000
+    });
+  });
 });
 
 angular.module('app.stats', []).controller('LottoStats', function($scope, $http, $ionicLoading) {
@@ -877,6 +911,7 @@ angular.module('app.util').factory('util', function() {
     GS_KEY: GS_KEY,
     GS_URL: GS_URL,
     RES_RE: RES_RE,
+    LIMIT_DRAWS: 100,
     thou_sep: function(n) {
       n = n.toString();
       n = n.replace(/(\d+?)(?=(\d{3})+(\D|$))/g, '$1,');
@@ -977,25 +1012,27 @@ angular.module('app.weekly', []).controller('Weekly', function($scope, $http, $s
     return $scope.bubbleVisible = false;
   }).style('opacity', 0);
   $scope.showBubble = function(event, idx) {
-    var el, new_top, offset, t;
+    var el, id, new_top, offset, sales, t;
     if ($scope.bubbleVisible) {
       return;
     }
     event.stopPropagation();
     $scope.bubbleVisible = true;
-    t = "<div class='row row-no-padding'>\n  <div class='col col-offset-80 text-right positive'>\n    <small><i class='ion-close-round'></i></small>\n  </div>\n</div>\n<dl class='dl-horizontal'>\n  <dt>Коло:</dt>\n  <dd>" + $scope.sales[idx].draw + "</dd>\n  <dt>Дата:</dt>\n  <dd>" + ($scope.dateToDMY($scope.sales[idx].date)) + "</dd>\n  <hr />\n  <dt>Лото:</dt><dd></dd>\n  <hr />\n  <dt>Уплата:</dt>\n  <dd>" + ($scope.thou_sep($scope.sales[idx].lotto)) + "</dd>";
-    t += "<dt>Добитници:</dt>\n<dd>\n  " + ($scope.sales[idx].lx7 > 0 ? $scope.sales[idx].lx7 + 'x7' : '') + "\n  " + ($scope.sales[idx].lx6p > 0 ? $scope.sales[idx].lx6p + 'x6<sup><strong>+</strong></sup>' : '') + " \n  " + ($scope.sales[idx].lx6 > 0 ? $scope.sales[idx].lx6 + 'x6' : '') + " \n  " + ($scope.sales[idx].lx5 > 0 ? $scope.thou_sep($scope.sales[idx].lx5 + 'x5') : '') + " \n  " + ($scope.sales[idx].lx4 > 0 ? $scope.thou_sep($scope.sales[idx].lx4 + 'x4') : '') + " \n</dd>";
-    t += "<dt>Доб. комбинација:</dt>\n<dd>\n  " + ($scope.sales[idx].lwcol.slice(0, 7).sort(function(a, b) {
+    sales = $scope.sales[idx];
+    t = "<div class='row row-no-padding'>\n  <div class='col col-offset-80 text-right positive'>\n    <small><i class='ion-close-round'></i></small>\n  </div>\n</div>\n<dl class='dl-horizontal'>\n  <dt>Коло:</dt>\n  <dd>" + sales.draw + "</dd>\n  <dt>Дата:</dt>\n  <dd>" + ($scope.dateToDMY(sales.date)) + "</dd>\n  <hr />\n  <dt>Лото:</dt><dd></dd>\n  <hr />\n  <dt>Уплата:</dt>\n  <dd>" + ($scope.thou_sep(sales.lotto)) + "</dd>";
+    t += "<dt>Добитници:</dt>\n<dd>\n  <span style='color: red'>\n    <strong>" + (sales.lx7 > 0 ? sales.lx7 + 'x7' : '') + "</strong>\n  </span>\n  <span style='color: orange'>\n    <strong>" + (sales.lx6p > 0 ? sales.lx6p + 'x6<sup><strong>+</strong></sup>' : '') + " \n    </strong>\n  </span>\n  " + (sales.lx6 > 0 ? sales.lx6 + 'x6' : '') + " \n  " + (sales.lx5 > 0 ? $scope.thou_sep(sales.lx5 + 'x5') : '') + " \n  " + (sales.lx4 > 0 ? $scope.thou_sep(sales.lx4 + 'x4') : '') + " \n</dd>";
+    t += "<dt>Доб. комбинација:</dt>\n<dd>\n  " + (sales.lwcol.slice(0, 7).sort(function(a, b) {
       return +a - +b;
-    }).join(' ')) + "\n  <span style='color: steelblue'>" + $scope.sales[idx].lwcol[7] + "</span>\n  <br />\n  [ " + ($scope.sales[idx].lwcol.slice(0, 7).join(' ')) + "\n  <span style='color: steelblue'>" + $scope.sales[idx].lwcol[7] + "</span> ]\n</dd>";
+    }).join(' ')) + "\n  <span style='color: steelblue'>" + sales.lwcol[7] + "</span>\n  <br />\n  [ " + (sales.lwcol.slice(0, 7).join(' ')) + "\n  <span style='color: steelblue'>" + sales.lwcol[7] + "</span> ]\n</dd>";
     t += "<hr />\n<dt>Џокер:</dt><dd></dd>\n<hr />\n<dt>Уплата:</dt>\n<dd>" + ($scope.thou_sep($scope.sales[idx].joker)) + "</dd>";
-    t += "<dt>Добитници:</dt>\n<dd>\n  " + ($scope.sales[idx].jx6 > 0 ? $scope.sales[idx].jx6 + 'x6' : '') + "\n  " + ($scope.sales[idx].jx5 > 0 ? $scope.sales[idx].jx5 + 'x5' : '') + " \n  " + ($scope.sales[idx].jx4 > 0 ? $scope.sales[idx].jx4 + 'x4' : '') + " \n  " + ($scope.sales[idx].jx3 > 0 ? $scope.thou_sep($scope.sales[idx].jx3 + 'x3') : '') + " \n  " + ($scope.sales[idx].jx2 > 0 ? $scope.thou_sep($scope.sales[idx].jx2 + 'x2') : '') + " \n  " + ($scope.sales[idx].jx1 > 0 ? $scope.thou_sep($scope.sales[idx].jx1 + 'x1') : '') + " \n</dd>";
-    t += "<dt>Доб. комбинација:</dt>\n<dd>\n  " + ($scope.sales[idx].jwcol.split('').join(' ')) + "\n</dd>";
+    t += "<dt>Добитници:</dt>\n<dd>\n  <span style='color: red'>\n    <strong>" + (sales.jx6 > 0 ? sales.jx6 + 'x6' : '') + "</strong>\n  </span>\n  <span style='color: orange'>\n    <strong>" + (sales.jx5 > 0 ? sales.jx5 + 'x5' : '') + "\n    </strong>\n  </span>\n  " + (sales.jx4 > 0 ? sales.jx4 + 'x4' : '') + " \n  " + (sales.jx3 > 0 ? $scope.thou_sep(sales.jx3 + 'x3') : '') + " \n  " + (sales.jx2 > 0 ? $scope.thou_sep(sales.jx2 + 'x2') : '') + " \n  " + (sales.jx1 > 0 ? $scope.thou_sep(sales.jx1 + 'x1') : '') + " \n</dd>";
+    t += "<dt>Доб. комбинација:</dt>\n<dd>\n  " + (sales.jwcol.split('').join(' ')) + "\n</dd>";
     t += "</dl>";
-    el = angular.element(document.querySelector("\#draw-" + $scope.sales[idx].draw));
+    id = "\#draw-" + sales.draw;
+    el = angular.element(document.querySelector(id));
     offset = $ionicPosition.offset(el);
     new_top = offset.top + $ionicScrollDelegate.getScrollPosition().top;
-    return $scope.bubble.html(t).style('left', (event.pageX + 10) + 'px').style('top', (new_top - 100) + 'px').style('opacity', 1);
+    return $scope.bubble.html(t).style('left', (event.pageX + 10) + 'px').style('top', (new_top - 102) + 'px').style('opacity', 1);
   };
   $scope.hideChart = true;
   $scope.lineChart = {};
@@ -1172,46 +1209,37 @@ angular.module('app.weekly', []).controller('Weekly', function($scope, $http, $s
 });
 
 angular.module('app.winners', []).controller('Winners', function($scope, $http, $ionicLoading) {
+  return console.log('Winners');
+}).controller('LottoWinners', function($scope, $http, $ionicLoading, $ionicPosition, $ionicScrollDelegate) {
   var query;
-  query = "SELECT *\nWHERE \n  D > 0 OR J > 0\nORDER BY B";
-  $ionicLoading.show();
-  return $http.get($scope.qurl(query)).success(function(data, status) {
-    var res;
-    res = $scope.to_json(data);
-    $scope.winners = res.table.rows.map(function(r) {
-      var a;
-      a = $scope.eval_row(r);
-      return {
-        year: a[1].getFullYear(),
-        draw: a[0],
-        date: a[1],
-        lsales: a[2],
-        lx7: a[3],
-        lx6p: a[4],
-        lx6: a[5],
-        lx5: a[6],
-        lx4: a[7],
-        lwcol: a.slice(15, 23),
-        jsales: a[8],
-        jx6: a[9],
-        jx5: a[10],
-        jx4: a[11],
-        jx3: a[12],
-        jx2: a[13],
-        jx1: a[14],
-        jwcol: a[23]
-      };
-    });
-    $ionicLoading.hide();
-    return console.log($scope.winners);
-  }).error(function(err) {
-    return $ionicLoading.show({
-      template: "Не може да се вчитаат добитниците. Пробај подоцна.",
-      duration: 3000
-    });
-  });
-}).controller('LottoWinners', function($scope, $http, $ionicLoading) {
-  var query;
+  $scope.bubbleVisible = false;
+  $scope.bubble = d3.select('#winners-list').append('div').attr('class', 'bubble bubble-left').attr('id', 'winners-bubble').on('click', function() {
+    $scope.bubble.transition().duration(1000).style('opacity', 0);
+    return $scope.bubbleVisible = false;
+  }).style('opacity', 0);
+  $scope.showBubble = function(event, idx) {
+    var el, id, new_top, offset, t, winners;
+    if ($scope.bubbleVisible) {
+      return;
+    }
+    event.stopPropagation();
+    $scope.bubbleVisible = true;
+    winners = $scope.winners[idx];
+    t = "<div class='row row-no-padding'>\n  <div class='col col-offset-80 text-right positive'>\n    <small><i class='ion-close-round'></i></small>\n  </div>\n</div>\n<h4 style='text-align: center'>" + (idx + 1) + "/" + $scope.winners.length + "</h4>\n<dl class='dl-horizontal'>\n  <dt>Коло:</dt>\n  <dd>" + winners.draw + "</dd>\n  <dt>Дата:</dt>\n  <dd>" + ($scope.dateToDMY(winners.date)) + "</dd>\n  <hr />\n  <dt>Лото:</dt><dd></dd>\n  <hr />\n  <dt>Уплата:</dt>\n  <dd>" + ($scope.thou_sep(winners.lsales)) + "</dd>";
+    t += "<dt>Добитници:</dt>\n<dd>\n  <span style='color: red;'>\n    <strong>" + (winners.lx7 + 'x7') + "</strong>\n  </span>\n  <span style='color: orange'>\n    <strong>\n      " + (winners.lx6p > 0 ? winners.lx6p + 'x6<sup><strong>+</strong></sup>' : '') + "\n    </strong>\n  </span>\n  " + (winners.lx6 > 0 ? winners.lx6 + 'x6' : '') + " \n  " + ($scope.thou_sep(winners.lx5 + 'x5')) + " \n  " + ($scope.thou_sep(winners.lx4 + 'x4')) + " \n</dd>";
+    t += "<dt>Доб. комбинација:</dt>\n<dd>\n  " + (winners.lwcol.slice(0, 7).sort(function(a, b) {
+      return +a - +b;
+    }).join(' ')) + "\n  <span style='color: steelblue'>" + winners.lwcol[7] + "</span>\n  <br />\n  [ " + (winners.lwcol.slice(0, 7).join(' ')) + "\n  <span style='color: steelblue'>" + winners.lwcol[7] + "</span> ]\n</dd>";
+    t += "<hr />\n<dt>Џокер:</dt><dd></dd>\n<hr />\n<dt>Уплата:</dt>\n<dd>" + ($scope.thou_sep(winners.jsales)) + "</dd>";
+    t += "<dt>Добитници:</dt>\n<dd>\n  <span style='color: red'>\n    <strong>" + (winners.jx6 > 0 ? winners.jx6 + 'x6' : '') + "</strong>\n  </span>\n  <span style='color: orange'>\n    <strong>" + (winners.jx5 > 0 ? winners.jx5 + 'x5' : '') + "</strong>\n  </span>\n  " + (winners.jx4 > 0 ? winners.jx4 + 'x4' : '') + " \n  " + (winners.jx3 > 0 ? $scope.thou_sep(winners.jx3 + 'x3') : '') + " \n  " + (winners.jx2 > 0 ? $scope.thou_sep(winners.jx2 + 'x2') : '') + " \n  " + (winners.jx1 > 0 ? $scope.thou_sep(winners.jx1 + 'x1') : '') + " \n</dd>";
+    t += "<dt>Доб. комбинација:</dt>\n<dd>\n  " + (winners.jwcol.split('').join(' ')) + "\n</dd>";
+    t += "</dl>";
+    id = "\#winners-" + winners.year + "-" + winners.draw;
+    el = angular.element(document.querySelector(id));
+    offset = $ionicPosition.offset(el);
+    new_top = offset.top + $ionicScrollDelegate.getScrollPosition().top;
+    return $scope.bubble.html(t).style('left', (event.pageX + 10) + 'px').style('top', (new_top - 58) + 'px').style('opacity', 1);
+  };
   query = "SELECT *\nWHERE \n  D > 0\nORDER BY B";
   $ionicLoading.show();
   return $http.get($scope.qurl(query)).success(function(data, status) {
@@ -1241,16 +1269,43 @@ angular.module('app.winners', []).controller('Winners', function($scope, $http, 
         jwcol: a[23]
       };
     });
-    $ionicLoading.hide();
-    return console.log($scope.winners);
+    return $ionicLoading.hide();
   }).error(function(err) {
     return $ionicLoading.show({
       template: "Не може да се вчитаат лото добитниците. Пробај подоцна.",
       duration: 3000
     });
   });
-}).controller('JokerWinners', function($scope, $http, $ionicLoading) {
+}).controller('JokerWinners', function($scope, $http, $ionicLoading, $ionicPosition, $ionicScrollDelegate) {
   var query;
+  $scope.bubbleVisible = false;
+  $scope.bubble = d3.select('#winners-list').append('div').attr('class', 'bubble bubble-left').attr('id', 'winners-bubble').on('click', function() {
+    $scope.bubble.transition().duration(1000).style('opacity', 0);
+    return $scope.bubbleVisible = false;
+  }).style('opacity', 0);
+  $scope.showBubble = function(event, idx) {
+    var el, id, new_top, offset, t, winners;
+    if ($scope.bubbleVisible) {
+      return;
+    }
+    event.stopPropagation();
+    $scope.bubbleVisible = true;
+    winners = $scope.winners[idx];
+    t = "<div class='row row-no-padding'>\n  <div class='col col-offset-80 text-right positive'>\n    <small><i class='ion-close-round'></i></small>\n  </div>\n</div>\n<h4 style='text-align: center'>" + (idx + 1) + "/" + $scope.winners.length + "</h4>\n<dl class='dl-horizontal'>\n  <dt>Коло:</dt>\n  <dd>" + winners.draw + "</dd>\n  <dt>Дата:</dt>\n  <dd>" + ($scope.dateToDMY(winners.date)) + "</dd>\n  <hr />\n  <dt>Лото:</dt><dd></dd>\n  <hr />\n  <dt>Уплата:</dt>\n  <dd>" + ($scope.thou_sep(winners.lsales)) + "</dd>";
+    t += "<dt>Добитници:</dt>\n<dd>\n  <span style='color: red;'>\n    <strong>\n      " + (winners.lx7 ? winners.lx7 + 'x7' : '') + "\n    </strong>\n  </span>\n  <span style='color: orange'>\n    <strong> " + (winners.lx6p > 0 ? winners.lx6p + 'x6<sup><strong>+</strong></sup>' : '') + " \n    </strong>\n  </span>\n  " + (winners.lx6 > 0 ? winners.lx6 + 'x6' : '') + " \n  " + ($scope.thou_sep(winners.lx5 + 'x5')) + " \n  " + ($scope.thou_sep(winners.lx4 + 'x4')) + " \n</dd>";
+    t += "<dt>Доб. комбинација:</dt>\n<dd>\n  " + (winners.lwcol.slice(0, 7).sort(function(a, b) {
+      return +a - +b;
+    }).join(' ')) + "\n  <span style='color: steelblue'>" + winners.lwcol[7] + "</span>\n  <br />\n  [ " + (winners.lwcol.slice(0, 7).join(' ')) + "\n  <span style='color: steelblue'>" + winners.lwcol[7] + "</span> ]\n</dd>";
+    t += "<hr />\n<dt>Џокер:</dt><dd></dd>\n<hr />\n<dt>Уплата:</dt>\n<dd>" + ($scope.thou_sep(winners.jsales)) + "</dd>";
+    t += "<dt>Добитници:</dt>\n<dd>\n  <span style='color: red'>\n    <strong>" + (winners.jx6 > 0 ? winners.jx6 + 'x6' : '') + "</strong>\n  </span>\n  <span style='color: orange'>\n    <strong>" + (winners.jx5 > 0 ? winners.jx5 + 'x5' : '') + "</strong>\n  </span>\n  " + (winners.jx4 > 0 ? winners.jx4 + 'x4' : '') + " \n  " + (winners.jx3 > 0 ? $scope.thou_sep(winners.jx3 + 'x3') : '') + " \n  " + (winners.jx2 > 0 ? $scope.thou_sep(winners.jx2 + 'x2') : '') + " \n  " + (winners.jx1 > 0 ? $scope.thou_sep(winners.jx1 + 'x1') : '') + " \n</dd>";
+    t += "<dt>Доб. комбинација:</dt>\n<dd>\n  " + (winners.jwcol.split('').join(' ')) + "\n</dd>";
+    t += "</dl>";
+    id = "\#winners-" + winners.year + "-" + winners.draw;
+    el = angular.element(document.querySelector(id));
+    offset = $ionicPosition.offset(el);
+    new_top = offset.top + $ionicScrollDelegate.getScrollPosition().top;
+    return $scope.bubble.html(t).style('left', (event.pageX + 10) + 'px').style('top', (new_top - 58) + 'px').style('opacity', 1);
+  };
   query = "SELECT *\nWHERE \n  J > 0\nORDER BY B";
   $ionicLoading.show();
   return $http.get($scope.qurl(query)).success(function(data, status) {
@@ -1280,8 +1335,7 @@ angular.module('app.winners', []).controller('Winners', function($scope, $http, 
         jwcol: a[23]
       };
     });
-    $ionicLoading.hide();
-    return console.log($scope.winners);
+    return $ionicLoading.hide();
   }).error(function(err) {
     return $ionicLoading.show({
       template: "Не може да се вчитаат џокер добитниците. Пробај подоцна.",

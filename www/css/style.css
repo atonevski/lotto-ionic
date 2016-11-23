@@ -3,7 +3,7 @@
 
 /* Empty. Add your own CSS if you like */
 .item-annual, .item-weekly,
-.item-stats, .item-winners { 
+.item-stats, .item-winners, .item-numbers { 
   padding-top: 2px;  
   padding-bottom: 2px; 
   margin: 0;
@@ -15,10 +15,10 @@
   border-width: 1px;
 }
 
-.item-stats, .item-winners { font-size: 14px; }
+.item-stats, .item-winners, .item-numbers { font-size: 14px; }
 
 .divider-weekly, .divider-annually,
-.divider-stats, .divider-winners {
+.divider-stats, .divider-winners, .divider-numbers {
   font-size: 12px;
   font-weight: bold;
 
@@ -94,7 +94,7 @@ div.tooltip {
     vertical-align: top;
     z-index: 100;
     font-family: 'Open Sans';
-    font-size: 12px;
+    font-size: 14px;
 }
 
 .bubble::before {
@@ -113,7 +113,7 @@ div.tooltip {
     width:  20px;
     z-index: 100;
     font-family: 'Open Sans';
-    font-size: 12px;
+    font-size: 14px;
 }
 
 .bubble-left {

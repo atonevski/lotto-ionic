@@ -12,8 +12,10 @@
       <div class='item item-winners' ng-repeat='w in winners'
           ng-class="{ even: $index % 2 == 0, odd: $index % 2 == 1 }">
           
-        <div class='row row-no-padding row-center' id='winners-{{ w.year }}'>
-          <div class='col col-25'>{{ w.year }}</div>
+        <div class='row row-no-padding row-center' id='winners-{{ w.year }}-{{ w.draw }}'>
+          <div class='col col-25' ng-click='showBubble($event, $index)'>
+            {{ w.year }}
+          </div>
           <div class='col col-25 text-center'>{{ w.draw }}</div>
           <div class='col col-10 text-center'>{{ w.lx7 }}</div>
           <div class='col col-40 text-right'>{{ thou_sep(w.lsales) }}</div>

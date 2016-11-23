@@ -12,7 +12,7 @@
 # 'starter' is the name of this angular module example (also set in a <body> attribute in index.html)
 # the 2nd parameter is an array of 'requires'
 angular.module 'app', ['ionic', 'ngCordova', 'app.util', 'app.upload', 'app.annual',
-        'app.weekly', 'app.stats', 'app.winners']
+        'app.weekly', 'app.stats', 'app.winners', 'app.drawn.numbers']
        .config ($stateProvider, $urlRouterProvider) ->
          $stateProvider.state 'home', {
              url:          '/home'
@@ -70,6 +70,11 @@ angular.module 'app', ['ionic', 'ngCordova', 'app.util', 'app.upload', 'app.annu
              url:          '/winners/joker'
              templateUrl:  'views/winners/joker.html'
              controller:   'JokerWinners'
+           }
+           .state 'lotto-drawn-numbers', {
+             url:          '/drawn-numbers/lotto'
+             templateUrl:  'views/drawn-numbers/lotto.html'
+             controller:   'LottoDrawnNumbers'
            }
            .state 'about', {
              url:          '/about'

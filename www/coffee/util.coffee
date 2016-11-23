@@ -24,6 +24,7 @@ angular.module 'app.util'
       GS_KEY:   GS_KEY
       GS_URL:   GS_URL
       RES_RE:   RES_RE
+      LIMIT_DRAWS:  100
 
       thou_sep: (n) -> # use second argument = 'mk' if mkd notation
         n = n.toString()
