@@ -97,6 +97,29 @@ angular.module 'app', ['ionic', 'ngCordova', 'app.util', 'app.upload', 'app.annu
       cordova.plugins.Keyboard.disableScroll true
     if window.StatusBar
       StatusBar.styleDefault()
+    
+    # check internet connection
+    # Cordova Connection available options
+    # Value                 Description
+    # Connection.UNKNOWN    Unknown connection
+    # Connection.ETHERNET   Ethernet connection
+    # Connection.WIFI       WiFi connection
+    # Connection.CELL_2G    Cell 2G connection
+    # Connection.CELL_3G    Cell 3G connection
+    # Connection.CELL_4G    Cell 4G connection
+    # Connection.NONE       No network connection
+    #
+    # add cordova plugin:
+    # cordova plugin add org.apache.cordova.network-information
+    if window.Connection
+      if navigator.connection.type == Connection.NONE
+        $ionicPopup.confirm {
+            title:    "Интернет"
+            content:  "Интернет е недостапен на уредот."
+          }
+        .then (result) ->
+          ionic.Platform.exitApp() unless result
+
 
 .controller 'Main', ($scope, $rootScope, $http, util, $cordovaAppVersion) ->
   # document.addEventListener 'deviceready', () ->

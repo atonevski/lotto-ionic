@@ -95,7 +95,19 @@ angular.module('app', ['ionic', 'ngCordova', 'app.util', 'app.upload', 'app.annu
       cordova.plugins.Keyboard.disableScroll(true);
     }
     if (window.StatusBar) {
-      return StatusBar.styleDefault();
+      StatusBar.styleDefault();
+    }
+    if (window.Connection) {
+      if (navigator.connection.type === Connection.NONE) {
+        return $ionicPopup.confirm({
+          title: "Интернет",
+          content: "Интернет е недостапен на уредот."
+        }).then(function(result) {
+          if (!result) {
+            return ionic.Platform.exitApp();
+          }
+        });
+      }
     }
   });
 }).controller('Main', function($scope, $rootScope, $http, util, $cordovaAppVersion) {

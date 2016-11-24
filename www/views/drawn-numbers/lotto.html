@@ -1,6 +1,12 @@
 <ion-view>
-  <ion-nav-title>Последни извлечени броеви</ion-nav-title>
+  <ion-nav-title>Последни броеви</ion-nav-title>
   <ion-content>
+    <div class='row'>
+      <div class='col col-offset-10 text-right no-border'>
+        <ion-toggle ng-model='sortNumbers' toggle-class='toggle-positive' class='no-border'>
+          Аритметичи редослед</ion-toggle>
+      </div>
+    </div>
     <div class='list'>
       <div class='item item-divider divider-numbers'>
         <div class='row row-no-padding'>
@@ -20,14 +26,14 @@
         <div class='row row-no-padding row-center'
              id='numbers-{{ n.date.getFullYear() }}-{{ n.draw }}'>
           <div class='col col-20'>{{ n.date.getFullYear() }}/{{ n.draw }}</div>
-          <div class='col col-10 text-center'>{{ n.sorted[0] }}</div>
-          <div class='col col-10 text-center'>{{ n.sorted[1] }}</div>
-          <div class='col col-10 text-center'>{{ n.sorted[2] }}</div>
-          <div class='col col-10 text-center'>{{ n.sorted[3] }}</div>
-          <div class='col col-10 text-center'>{{ n.sorted[4] }}</div>
-          <div class='col col-10 text-center'>{{ n.sorted[5] }}</div>
-          <div class='col col-10 text-center'>{{ n.sorted[6] }}</div>
-          <div class='col col-10 text-center'>{{ n.sorted[7] }}</div>
+          <div class='col col-10 text-center'>{{ sortNumbers ? n.sorted[0] : n.column[0] }}</div>
+          <div class='col col-10 text-center'>{{ sortNumbers ? n.sorted[1] : n.column[1] }}</div>
+          <div class='col col-10 text-center'>{{ sortNumbers ? n.sorted[2] : n.column[2] }}</div>
+          <div class='col col-10 text-center'>{{ sortNumbers ? n.sorted[3] : n.column[3] }}</div>
+          <div class='col col-10 text-center'>{{ sortNumbers ? n.sorted[4] : n.column[4] }}</div>
+          <div class='col col-10 text-center'>{{ sortNumbers ? n.sorted[5] : n.column[5] }}</div>
+          <div class='col col-10 text-center'>{{ sortNumbers ? n.sorted[6] : n.column[6] }}</div>
+          <div class='col col-10 text-center'>{{ sortNumbers ? n.sorted[7] : n.column[7] }}</div>
         </div>
       </div>
     </div>
