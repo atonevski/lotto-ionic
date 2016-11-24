@@ -95,24 +95,26 @@ angular.module('app', ['ionic', 'ngCordova', 'app.util', 'app.upload', 'app.annu
       cordova.plugins.Keyboard.disableScroll(true);
     }
     if (window.StatusBar) {
-      StatusBar.styleDefault();
-    }
-    if (window.Connection) {
-      if (navigator.connection.type === Connection.NONE) {
-        return $ionicPopup.confirm({
-          title: "Интернет",
-          content: "Интернет е недостапен на уредот."
-        }).then(function(result) {
-          if (!result) {
-            return ionic.Platform.exitApp();
-          }
-        });
-      }
+      return StatusBar.styleDefault();
     }
   });
-}).controller('Main', function($scope, $rootScope, $http, util, $cordovaAppVersion) {
+}).controller('Main', function($scope, $rootScope, $http, util, $cordovaAppVersion, $cordovaNetwork, $ionicPopup) {
   var k, q, query, to_json, v;
   ionic.Platform.ready(function() {
+    if ($cordovaNetwork.getNetwork() === Connection.NONE) {
+      $ionicPopup.confirm({
+        title: 'Интернет',
+        content: 'Интернет е недостапен на уредот.',
+        cancelText: 'Откажи',
+        cancelType: 'button-assertive',
+        okText: 'Продолжи',
+        okType: 'button-positive'
+      }).then(function(result) {
+        if (!result) {
+          return ionic.Platform.exitApp();
+        }
+      });
+    }
     if (window.cordova) {
       $cordovaAppVersion.getVersionNumber().then(function(ver) {
         return $scope.appVersion = ver;

@@ -110,29 +110,37 @@ angular.module 'app', ['ionic', 'ngCordova', 'app.util', 'app.upload', 'app.annu
     # Connection.NONE       No network connection
     #
     # add cordova plugin:
-    # cordova plugin add org.apache.cordova.network-information
-    if window.Connection
-      if navigator.connection.type == Connection.NONE
-        $ionicPopup.confirm {
-            title:    "Интернет"
-            content:  "Интернет е недостапен на уредот."
-          }
-        .then (result) ->
-          ionic.Platform.exitApp() unless result
+    # cordova plugin add cordova-plugin-network-information
+    # if navigator.connection
+    #   if navigator.connection.type == Connection.NONE
+    #     $ionicPopup.confirm {
+    #         title:    "Интернет"
+    #         content:  "Интернет е недостапен на уредот."
+    #       }
+    #     .then (result) ->
+    #       ionic.Platform.exitApp() unless result
 
 
-.controller 'Main', ($scope, $rootScope, $http, util, $cordovaAppVersion) ->
-  # document.addEventListener 'deviceready', () ->
-  #   console.log 'device ready'
-  #   $cordovaAppVersion.getVersionNumber (ver) ->
-  #     $scope.appVersion = ver
-  # , false
+.controller 'Main', ($scope, $rootScope, $http, util, $cordovaAppVersion, $cordovaNetwork, $ionicPopup) ->
   ionic.Platform.ready () ->
+    if $cordovaNetwork.getNetwork() == Connection.NONE
+      $ionicPopup.confirm {
+          title:      'Интернет'
+          content:    'Интернет е недостапен на уредот.'
+          cancelText: 'Откажи'
+          cancelType: 'button-assertive'
+          okText:     'Продолжи'
+          okType:     'button-positive'
+        }
+      .then (result) ->
+        ionic.Platform.exitApp() unless result
+
     if window.cordova
       $cordovaAppVersion.getVersionNumber().then (ver) ->
         $scope.appVersion = ver
       $cordovaAppVersion.getAppName().then (name) ->
         $scope.appName = name
+
 
   to_json = (d) -> # convert google query response to json
     re =  /^([^(]+?\()(.*)\);$/g
@@ -158,8 +166,6 @@ angular.module 'app', ['ionic', 'ngCordova', 'app.util', 'app.upload', 'app.annu
   # manually
   for k, v of util
     $scope[k] = v
-
-  # util.merge $scope, util
 
   # get last year
   $scope.qurl = (q) -> "#{ $scope.GS_URL }tq?tqx=out:json&key=#{ $scope.GS_KEY }" +
